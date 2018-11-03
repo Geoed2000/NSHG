@@ -7,6 +7,9 @@ namespace NSHG
 {
     namespace Packet
     {
+        /// <summary>
+        /// This class defines the IPV4 header bit by bit accurate to a real life example
+        /// </summary>
         public class IPv4Header
         {
             // Depreciated
@@ -26,7 +29,7 @@ namespace NSHG
                 public interface IOption
                 {
                     //IOption Frombytes(byte[] bytes,uint pointer);
-                    byte[] Tobytes();
+                    byte[] ToBytes();
                     OptionType type
                     {
                         get;
@@ -41,7 +44,7 @@ namespace NSHG
                             return OptionType.EndOfOptionList;
                         }
                     }
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
                         return new byte[1] { (byte)type };
                     }
@@ -56,7 +59,7 @@ namespace NSHG
                         }
                     }
 
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
                         return new byte[1] { (byte)type };
                     }
@@ -104,19 +107,19 @@ namespace NSHG
                     }
 
 
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
                         List<byte> bytes = new List<byte>
                     {
                         (byte)type,
                         11, // Length
                     };
-                        bytes.AddRange(BitConverter.Getbytes((UInt16)SecType));
-                        bytes.AddRange(BitConverter.Getbytes((UInt16)Compartments));
+                        bytes.AddRange(BitConverter.GetBytes((UInt16)SecType));
+                        bytes.AddRange(BitConverter.GetBytes((UInt16)Compartments));
 
                         byte b = (byte)(TransmissionControlCode >> 16);
                         bytes.Add(b);
-                        bytes.AddRange(BitConverter.Getbytes(TransmissionControlCode));
+                        bytes.AddRange(BitConverter.GetBytes(TransmissionControlCode));
 
 
                         return bytes.ToArray();
@@ -145,7 +148,7 @@ namespace NSHG
 
                         foreach (IP ip in RouteData)
                         {
-                            bytes.AddRange(ip.Tobytes());
+                            bytes.AddRange(ip.ToBytes());
                         }
 
                         Length = (byte)(RouteData.Length * 4);
@@ -163,7 +166,7 @@ namespace NSHG
                         return new IP(ip);
                     }
 
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
 
                         List<byte> bytes = new List<byte>()
@@ -209,11 +212,11 @@ namespace NSHG
                     public bool AddIp(IP ip)
                     {
                         if (Pointer >= Length) return false;
-                        ip.Tobytes().CopyTo(RouteData, Pointer - 4);
+                        ip.ToBytes().CopyTo(RouteData, Pointer - 4);
                         return true;
                     }
 
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
                         List<byte> bytes = new List<byte>()
                         {
@@ -236,7 +239,7 @@ namespace NSHG
                         }
                     }
 
-                    public byte[] Tobytes()
+                    public byte[] ToBytes()
                     {
                         List<byte> bytes = new List<byte>()
                         {
@@ -249,6 +252,33 @@ namespace NSHG
                 }
             }
 
+            /// <summary>
+            /// Calculates the one's compliment of the one's compliment sum in 16 bit words of the byte array provided
+            /// </summary>
+            /// <param name="data">Byte array containing the data to be included in the check sum</param>
+            /// <param name="start">Starting byte in the array</param>
+            /// <param name="length">Amount of bytes to read, must be divisible by 2, start + length >= data.length</param>
+            /// <returns>16bit unsinged one's comliment sum</returns>
+            public static UInt16 CalculateChecksum (byte[] data, int start, int length)
+            {
+                UInt16 current;
+                UInt32 total = 0;
+                for (int i = start; i < length + start; i += 2)
+                {
+                    current = BitConverter.ToUInt16(data, i);
+                    total += current;
+                    if((total >> 16) != 0) // if the value is > 65536(2^16) then remove the 256 
+                    {
+                        total = (total & 0xFF00) + (total >> 16);
+                    }    
+                }
+                return (UInt16)~total;
+
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
             public enum ProtocolType : byte
             {
                 ICMP = 1,
@@ -408,27 +438,34 @@ namespace NSHG
                 return new IPv4Header(false, 255, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
             }
             // Method(s)
-            public byte[] Tobytes()
+            public byte[] ToBytes()
             {
                 List<byte> bytes = new List<byte>();
                 
+                
+                bytes.Add(VersionIHL); // Byte 0
+                bytes.Add(TOS); // Byte 1
+                bytes.AddRange(BitConverter.GetBytes(Length)); // Byte 2,3
+                bytes.AddRange(BitConverter.GetBytes(Identification)); //Byte 4,5
+                bytes.AddRange(BitConverter.GetBytes(FlagsFragmentOffset)); //Byte 5,6
+                bytes.Add(TTL); // Byte 7
+                bytes.Add((byte)Protocol); // Byte 8
+                bytes.AddRange(BitConverter.GetBytes((UInt16)0)); // bytes 9,10 / set to zero for the purposes of calculationg the checksum later
+                bytes.AddRange(SourceAddress.ToBytes()); // Byte 11,12,13,14
+                bytes.AddRange(DestinationAddress.ToBytes()); // Byte 15,16,17,18
+                bytes.AddRange(Options); // Byte 19 - x
 
-                bytes.Add(VersionIHL);
-                bytes.Add(TOS);
-                bytes.AddRange(BitConverter.Getbytes(Length));
-                bytes.AddRange(BitConverter.Getbytes(Identification));
-                bytes.AddRange(BitConverter.Getbytes(FlagsFragmentOffset));
-                bytes.Add(TTL);
-                bytes.Add((byte)Protocol);
-                bytes.AddRange(BitConverter.Getbytes(HeaderChecksum));
-                bytes.AddRange(SourceAddress.Tobytes());
-                bytes.AddRange(DestinationAddress.Tobytes());
-                bytes.AddRange(Options);
-                bytes.AddRange(Datagram);
+                UInt16 checksum = CalculateChecksum(bytes.ToArray(), 0, bytes.Count);
 
+                byte[] checksumBytes = BitConverter.GetBytes(checksum);
+
+                bytes[9] = checksumBytes[0];
+                bytes[10] = checksumBytes[1];
+
+                bytes.AddRange(Datagram); // x - end
+                
                 return bytes.ToArray();
             }
-            
         }
 
 
@@ -437,7 +474,6 @@ namespace NSHG
             byte Type;
             byte Code;
             UInt16 Checksum;
-
             
         }
     }
