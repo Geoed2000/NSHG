@@ -16,6 +16,12 @@ namespace NSHG
             Ip = IPAddress;
         }
 
+        public IP(Byte[] Array, int StartIndex )
+        {
+            ArraySegment<Byte> IPAddress = new ArraySegment<byte>(Array, StartIndex, 4);
+            Ip = IPAddress.Array;
+        }
+
         public static IP Parse(string IPAddress)
         {
 

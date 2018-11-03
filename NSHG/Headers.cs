@@ -252,6 +252,7 @@ namespace NSHG
                 }
             }
 
+            // Static(s)
             /// <summary>
             /// Calculates the one's compliment of the one's compliment sum in 16 bit words of the byte array provided
             /// </summary>
@@ -259,7 +260,7 @@ namespace NSHG
             /// <param name="start">Starting byte in the array</param>
             /// <param name="length">Amount of bytes to read, must be divisible by 2, start + length >= data.length</param>
             /// <returns>16bit unsinged one's comliment sum</returns>
-            public static UInt16 CalculateChecksum (byte[] data, int start, int length)
+            private static UInt16 CalculateChecksum (byte[] data, int start, int length)
             {
                 UInt16 current;
                 UInt32 total = 0;
@@ -276,9 +277,6 @@ namespace NSHG
 
             }
 
-            /// <summary>
-            /// 
-            /// </summary>
             public enum ProtocolType : byte
             {
                 ICMP = 1,
@@ -381,11 +379,17 @@ namespace NSHG
             }
             public  byte TTL;
             public  ProtocolType Protocol;
-            public  UInt16 HeaderChecksum;
+            public  UInt16 HeaderChecksum
+            {
+                get
+                {
+                    byte[] header = ToBytesNoChecksumNoDatagram().ToArray();
+                    return CalculateChecksum(header, 0, header.Length);
+                }
+            }
             public  IP SourceAddress;
             public  IP DestinationAddress;
-            public  byte[] Options;
-             
+            public  byte[] Options;             
             public byte[] Datagram;
 
 
@@ -407,41 +411,51 @@ namespace NSHG
                 this.Options = Options;
                 this.Datagram = Data;
             }
-
             public IPv4Header(bool DontFragment, byte TTL, ProtocolType Protocol, IP Source, IP Destination, byte[] Options, byte[] Datagram):
                 this(0, 0, false, false, false, 0, Protocol, Source, Destination, Options, Datagram)
             {
 
             }
-
             public IPv4Header(byte[] data)
             {
                 byte Version = (byte)(data[0] >> 4);
                 if (Version != 0b0100_0000)
                 {
                     throw new ArgumentException("Incorrect IP Version");
-                }
+                } // Check for valid IP Version
 
                 byte IHL = (byte)(data[0] - 0b0100_0000);
                 byte[] header = new byte[IHL * 4];
                 Array.Copy(data, header, IHL * 4);
 
-                byte TypeOfService = header[1];
+                TOS = header[1];
                 UInt16 TotalLength = BitConverter.ToUInt16(header, 2);
+                if (TotalLength < 20) throw new ArgumentException("Header Total length < 20");
                 Identification = BitConverter.ToUInt16(header, 4);
+                FlagsFragmentOffset =  BitConverter.ToUInt16(header, 6);
+                TTL = header[8];
+                Protocol = (ProtocolType)header[9];
+                SourceAddress = new IP(header, 12);
+                DestinationAddress = new IP(header, 16);
+                if (IHL*4 - 20 > 0) Options = new ArraySegment<byte>(header, 20, IHL*4 - 20).Array;
+                Datagram = new ArraySegment<byte>(header,IHL*4,TotalLength - IHL*4).Array;
 
+                if (HeaderChecksum != BitConverter.ToUInt16(header, 10))
+                {
+                    throw new Exception("Checksum is invalid");
+                }
             }
 
-
-            static IPv4Header DefaultTCPWrapper(IP Source, IP Destination, byte[] Datagram)
+            public static IPv4Header DefaultTCPWrapper(IP Source, IP Destination, byte[] Datagram)
             {
                 return new IPv4Header(false, 255, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
             }
+
             // Method(s)
-            public byte[] ToBytes()
+
+            private List<byte> ToBytesNoChecksumNoDatagram()
             {
                 List<byte> bytes = new List<byte>();
-                
                 
                 bytes.Add(VersionIHL); // Byte 0
                 bytes.Add(TOS); // Byte 1
@@ -450,10 +464,15 @@ namespace NSHG
                 bytes.AddRange(BitConverter.GetBytes(FlagsFragmentOffset)); //Byte 5,6
                 bytes.Add(TTL); // Byte 7
                 bytes.Add((byte)Protocol); // Byte 8
-                bytes.AddRange(BitConverter.GetBytes((UInt16)0)); // bytes 9,10 / set to zero for the purposes of calculationg the checksum later
+                bytes.AddRange(new byte[]{0,0}); // bytes 9,10 / set to zero for the purposes of calculationg the checksum later
                 bytes.AddRange(SourceAddress.ToBytes()); // Byte 11,12,13,14
                 bytes.AddRange(DestinationAddress.ToBytes()); // Byte 15,16,17,18
                 bytes.AddRange(Options); // Byte 19 - x
+                return bytes;
+            }
+            public byte[] ToBytes()
+            {
+                List<byte> bytes = ToBytesNoChecksumNoDatagram();
 
                 UInt16 checksum = CalculateChecksum(bytes.ToArray(), 0, bytes.Count);
 
@@ -466,9 +485,9 @@ namespace NSHG
                 
                 return bytes.ToArray();
             }
+            
         }
-
-
+        
         public class ICMPHeader
         {
             byte Type;

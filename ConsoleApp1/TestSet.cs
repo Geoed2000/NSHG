@@ -28,6 +28,12 @@ namespace ConsoleApp1
                 IP ip0 = new IP(new Byte[] { 0, 0, 0, 0 });
                 Output(ip0.Equals(ip0), "ip.Equals (Identical)");
 
+                Console.WriteLine("NSHG.IP");
+                IP ip1234 = new IP(new Byte[] { 1, 2, 3, 4 ,5},0);
+                IP ip12342 = new IP(new Byte[] { 1, 2, 3, 4});
+                Output(ip12342.Equals(ip1234), "ip.from array size > 4");
+
+
                 IP ip255 = new IP(new Byte[] { 255, 255, 255, 255 });
                 IP ip2552 = new IP(new Byte[] { 255, 255, 255, 255 });
                 Output(ip255.Equals(ip2552), "ip.Equals (Non Identical)");
