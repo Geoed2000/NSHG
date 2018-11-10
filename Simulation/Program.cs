@@ -20,10 +20,10 @@ namespace Simulation
         {
             Dictionary<MAC,NSHG.System> Systems = new Dictionary<MAC, NSHG.System>();
             
-            if (LoadNetwork())
-            {
+            //if (LoadNetwork())
+            //{
 
-            }
+            //}
 
 
         }

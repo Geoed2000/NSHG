@@ -9,8 +9,7 @@ namespace NSHG
         readonly MAC MacAddress;
         MAC[] connections;
         IP DefaultGateway;
-
-
+        
 
     }
 }

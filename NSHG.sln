@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simulation", "Simulation\Si
 		{B38621C0-D403-42CE-9F90-2A364C416E26} = {B38621C0-D403-42CE-9F90-2A364C416E26}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XUnitTestProject1", "XUnitTestProject1\XUnitTestProject1.csproj", "{F054641E-2C0E-440B-9BFF-02982319A570}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test Set", "XUnitTestProject1\Test Set.csproj", "{F054641E-2C0E-440B-9BFF-02982319A570}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

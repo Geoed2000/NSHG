@@ -270,7 +270,7 @@ namespace NSHG
                     total += current;
                     if((total >> 16) != 0) // if the value is > 65536(2^16) then remove the 256 
                     {
-                        total = (total & 0xFF00) + (total >> 16);
+                        total = (total & 0x00FF) + (total >> 16);
                     }    
                 }
                 return (UInt16)~total;
@@ -293,7 +293,13 @@ namespace NSHG
             
             
             // Attribute(s) 
-            private byte VersionIHL = 0;
+            private byte VersionIHL
+            {
+                get
+                {
+                    return (byte)(Version << 4 + IHL);
+                }
+            }
             public  byte Version
             {
                 get
@@ -305,8 +311,7 @@ namespace NSHG
             {
                 get
                 {
-                    byte Ihl = (byte)(5 + Options.Length / 4);
-                    VersionIHL = (byte)(Ihl + 0b0100_0000);
+                    byte Ihl = (byte)(5 + (Options.Length / 4));                 
                     return Ihl;
                 }
             }
