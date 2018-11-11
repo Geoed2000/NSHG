@@ -260,17 +260,17 @@ namespace NSHG
             /// <param name="start">Starting byte in the array</param>
             /// <param name="length">Amount of bytes to read, must be divisible by 2, start + length >= data.length</param>
             /// <returns>16bit unsinged one's comliment sum</returns>
-            private static UInt16 CalculateChecksum (byte[] data, int start, int length)
+            private static UInt16 CalculateChecksum (byte[] data)
             {
                 UInt16 current;
                 UInt32 total = 0;
-                for (int i = start; i < length + start; i += 2)
+                for (int i = 0; i < data.Length ; i += 2)
                 {
-                    current = BitConverter.ToUInt16(data, i);
+                    current = (UInt16)((data[i] << 8) + data[i + 1]);
                     total += current;
-                    if((total >> 16) != 0) // if the value is > 65536(2^16) then remove the 256 
+                    while((total >> 16) > 0) // if the value is > 65536(2^16) then remove the 256 
                     {
-                        total = (total & 0x00FF) + (total >> 16);
+                        total = (total & 0xFFFF) + (total >> 16);
                     }    
                 }
                 return (UInt16)~total;
@@ -280,7 +280,7 @@ namespace NSHG
             public enum ProtocolType : byte
             {
                 ICMP = 1,
-                TCP = 6,
+                TCP = 6
 
             }
 
@@ -297,7 +297,7 @@ namespace NSHG
             {
                 get
                 {
-                    return (byte)(Version << 4 + IHL);
+                    return (byte)(0x40 + IHL);
                 }
             }
             public  byte Version
@@ -320,7 +320,7 @@ namespace NSHG
             {
                 get
                 {
-                    return (UInt16)(IHL * 4 + Datagram.Length);
+                    return (UInt16)((IHL * 4) + Datagram.Length);
                 }
             }
             public  UInt16 Identification;
@@ -389,7 +389,7 @@ namespace NSHG
                 get
                 {
                     byte[] header = ToBytesNoChecksumNoDatagram().ToArray();
-                    return CalculateChecksum(header, 0, header.Length);
+                    return CalculateChecksum(header);
                 }
             }
             public  IP SourceAddress;
@@ -400,7 +400,7 @@ namespace NSHG
 
             // Constructor(s)
             public IPv4Header(byte TOS, UInt16 Identification,
-                bool Reserved, bool DontFragment, bool MoreFragments, UInt16 FragmentOffset,
+                bool Reserved, bool DontFragment, bool MoreFragments, UInt16 FragmentOffset, byte TTL,
                 ProtocolType Protocol, IP Source, IP Destination, byte[] Options, 
                 byte[] Data)
             {                
@@ -410,14 +410,15 @@ namespace NSHG
                 this.DF = DontFragment;
                 this.MF = MoreFragments;
                 this.FragmentOffset = FragmentOffset;
+                this.TTL = TTL;
                 this.Protocol = Protocol;
                 this.SourceAddress = Source;
                 this.DestinationAddress = Destination;
                 this.Options = Options;
                 this.Datagram = Data;
             }
-            public IPv4Header(bool DontFragment, byte TTL, ProtocolType Protocol, IP Source, IP Destination, byte[] Options, byte[] Datagram):
-                this(0, 0, false, false, false, 0, Protocol, Source, Destination, Options, Datagram)
+            public IPv4Header(UInt16 Identification, bool DontFragment, bool MoreFragments, byte TTL, ProtocolType Protocol, IP Source, IP Destination, byte[] Options, byte[] Datagram):
+                this(0, Identification, false, DontFragment, MoreFragments, 0, TTL, Protocol, Source, Destination, Options, Datagram)
             {
 
             }
@@ -453,38 +454,45 @@ namespace NSHG
 
             public static IPv4Header DefaultTCPWrapper(IP Source, IP Destination, byte[] Datagram)
             {
-                return new IPv4Header(false, 255, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
+                return new IPv4Header(0, false, false, 255, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
             }
 
             // Method(s)
 
             private List<byte> ToBytesNoChecksumNoDatagram()
             {
+                byte[] b = new byte[2];
                 List<byte> bytes = new List<byte>();
-                
                 bytes.Add(VersionIHL); // Byte 0
                 bytes.Add(TOS); // Byte 1
-                bytes.AddRange(BitConverter.GetBytes(Length)); // Byte 2,3
-                bytes.AddRange(BitConverter.GetBytes(Identification)); //Byte 4,5
-                bytes.AddRange(BitConverter.GetBytes(FlagsFragmentOffset)); //Byte 5,6
-                bytes.Add(TTL); // Byte 7
-                bytes.Add((byte)Protocol); // Byte 8
-                bytes.AddRange(new byte[]{0,0}); // bytes 9,10 / set to zero for the purposes of calculationg the checksum later
-                bytes.AddRange(SourceAddress.ToBytes()); // Byte 11,12,13,14
-                bytes.AddRange(DestinationAddress.ToBytes()); // Byte 15,16,17,18
-                bytes.AddRange(Options); // Byte 19 - x
+
+                b = BitConverter.GetBytes(Length);
+                Array.Reverse(b);
+                bytes.AddRange(b); // Byte 2,3
+                b = BitConverter.GetBytes(Identification);
+                Array.Reverse(b);
+                bytes.AddRange(b); //Byte 4,5
+                b = BitConverter.GetBytes(FlagsFragmentOffset);
+                Array.Reverse(b);
+                bytes.AddRange(b); //Byte 6,7
+                bytes.Add(TTL); // Byte 8
+                bytes.Add((byte)Protocol); // Byte 9
+                bytes.AddRange(new byte[]{0,0}); // bytes 10,11 / set to zero for the purposes of calculationg the checksum later
+                bytes.AddRange(SourceAddress.ToBytes()); // Byte 12,13,14,15
+                bytes.AddRange(DestinationAddress.ToBytes()); // Byte 16,17,18,19
+                bytes.AddRange(Options); // Byte 20 - x
                 return bytes;
             }
             public byte[] ToBytes()
             {
                 List<byte> bytes = ToBytesNoChecksumNoDatagram();
 
-                UInt16 checksum = CalculateChecksum(bytes.ToArray(), 0, bytes.Count);
+                UInt16 checksum = CalculateChecksum(bytes.ToArray());
 
                 byte[] checksumBytes = BitConverter.GetBytes(checksum);
 
-                bytes[9] = checksumBytes[0];
                 bytes[10] = checksumBytes[1];
+                bytes[11] = checksumBytes[0];
 
                 bytes.AddRange(Datagram); // x - end
                 

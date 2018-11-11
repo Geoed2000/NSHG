@@ -1,5 +1,6 @@
 ﻿using System;
 using NSHG;
+using NSHG.Packet;
 
 namespace ConsoleApp1
 {
@@ -142,6 +143,38 @@ namespace ConsoleApp1
 
             {
 
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine();
+
+                byte[] expected, actual;
+
+                expected = new byte[]
+                {
+                0x45, 0x00, 0x00, 0x28, 0x6e, 0x9c, 0x40, 0x00, 0x80, 0x06, 0x77, 0xd7, 0x0a, 0x90, 0xe3, 0x64, 0x28, 0x43, 0xfe, 0x24
+                };
+
+                IPv4Header ipv4 = new IPv4Header(0x6E9C, true, false, 128, (IPv4Header.ProtocolType)6, IP.Parse("10.144.227.100"), IP.Parse("40.67.254.36"), new byte[0], new byte[20]);
+
+                
+
+
+                actual = ipv4.ToBytes();
+
+                foreach (byte b in expected)
+                {
+                    Console.Write(b.ToString("X"));
+                    Console.Write(" ");
+                }
+                Console.WriteLine();
+
+
+                foreach (byte b in actual)
+                {
+                    Console.Write(b.ToString("X"));
+                    Console.Write(" ");
+                }
+                Console.WriteLine();
             }// IP  Header
 
             {
