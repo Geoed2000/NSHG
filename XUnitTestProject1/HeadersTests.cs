@@ -3,9 +3,9 @@ using Xunit;
 using NSHG;
 using NSHG.Packet;
 
-namespace XUnitTestProject1
+namespace XUnitTests
 {
-    public class Headers
+    public class HeadersTests
     {
         [Fact]
         public void Checksum()

@@ -4,7 +4,7 @@ using NSHG.Packet;
 
 namespace ConsoleApp1
 {
-    class TestSet
+    class GeneralTests
     {
         static void Output(bool value, string test)
         {
