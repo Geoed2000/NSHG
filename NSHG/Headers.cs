@@ -293,7 +293,7 @@ namespace NSHG
             
             
             // Attribute(s) 
-            private byte VersionIHL
+            private byte _VersionIHL
             {
                 get
                 {
@@ -324,54 +324,54 @@ namespace NSHG
                 }
             }
             public  UInt16 Identification;
-            private UInt16 FlagsFragmentOffset;
+            private UInt16 _FlagsFragmentOffset;
             public  bool RES
             {
                 get
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & RESMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & RESMask);
                     if (v > 0) return true;
                     else return false;
                 }
                 set
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & ~RESMask);
-                    if (value) FlagsFragmentOffset = (UInt16)(FlagsFragmentOffset | RESMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & ~RESMask);
+                    if (value) _FlagsFragmentOffset = (UInt16)(_FlagsFragmentOffset | RESMask);
                 }
             }
             public  bool DF
             {
                 get
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & DFMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & DFMask);
                     if (v > 0) return true;
                     else return false;
                 }
                 set
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & ~DFMask);
-                    if (value) FlagsFragmentOffset = (UInt16)(FlagsFragmentOffset | DFMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & ~DFMask);
+                    if (value) _FlagsFragmentOffset = (UInt16)(_FlagsFragmentOffset | DFMask);
                 }
             }
             public  bool MF
             {
                 get
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & MFMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & MFMask);
                     if (v > 0) return true;
                     else return false;
                 }
                 set
                 {
-                    UInt16 v = (UInt16)(FlagsFragmentOffset & ~MFMask);
-                    if (value) FlagsFragmentOffset = (UInt16)(FlagsFragmentOffset | MFMask);
+                    UInt16 v = (UInt16)(_FlagsFragmentOffset & ~MFMask);
+                    if (value) _FlagsFragmentOffset = (UInt16)(_FlagsFragmentOffset | MFMask);
                 }
             }
             public  UInt16 FragmentOffset
             {
                 get
                 {
-                    return (UInt16)(FlagsFragmentOffset & FOMask);
+                    return (UInt16)(_FlagsFragmentOffset & FOMask);
                 }
                 set
                 {
@@ -379,7 +379,7 @@ namespace NSHG
                     {
                         throw new OverflowException();
                     }
-                    FlagsFragmentOffset = (UInt16)((FlagsFragmentOffset & ~IHLbyteMask) + value);
+                    _FlagsFragmentOffset = (UInt16)((_FlagsFragmentOffset & ~IHLbyteMask) + value);
                 }
             }
             public  byte TTL;
@@ -388,7 +388,7 @@ namespace NSHG
             {
                 get
                 {
-                    byte[] header = ToBytesNoChecksumNoDatagram().ToArray();
+                    byte[] header = _ToBytesNoChecksumNoDatagram().ToArray();
                     return CalculateChecksum(header);
                 }
             }
@@ -438,7 +438,7 @@ namespace NSHG
                 UInt16 TotalLength = BitConverter.ToUInt16(header, 2);
                 if (TotalLength < 20) throw new ArgumentException("Header Total length < 20");
                 Identification = BitConverter.ToUInt16(header, 4);
-                FlagsFragmentOffset =  BitConverter.ToUInt16(header, 6);
+                _FlagsFragmentOffset =  BitConverter.ToUInt16(header, 6);
                 TTL = header[8];
                 Protocol = (ProtocolType)header[9];
                 SourceAddress = new IP(header, 12);
@@ -459,11 +459,11 @@ namespace NSHG
 
             // Method(s)
 
-            private List<byte> ToBytesNoChecksumNoDatagram()
+            private List<byte> _ToBytesNoChecksumNoDatagram()
             {
                 byte[] b = new byte[2];
                 List<byte> bytes = new List<byte>();
-                bytes.Add(VersionIHL); // Byte 0
+                bytes.Add(_VersionIHL); // Byte 0
                 bytes.Add(TOS); // Byte 1
 
                 b = BitConverter.GetBytes(Length);
@@ -472,7 +472,7 @@ namespace NSHG
                 b = BitConverter.GetBytes(Identification);
                 Array.Reverse(b);
                 bytes.AddRange(b); //Byte 4,5
-                b = BitConverter.GetBytes(FlagsFragmentOffset);
+                b = BitConverter.GetBytes(_FlagsFragmentOffset);
                 Array.Reverse(b);
                 bytes.AddRange(b); //Byte 6,7
                 bytes.Add(TTL); // Byte 8
@@ -485,7 +485,7 @@ namespace NSHG
             }
             public byte[] ToBytes()
             {
-                List<byte> bytes = ToBytesNoChecksumNoDatagram();
+                List<byte> bytes = _ToBytesNoChecksumNoDatagram();
 
                 UInt16 checksum = CalculateChecksum(bytes.ToArray());
 

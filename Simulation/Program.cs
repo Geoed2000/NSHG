@@ -13,20 +13,23 @@ namespace Simulation
        
         private static bool LoadNetwork(string filepath)
         {
+            
+
             return true;
         }
 
+        static Dictionary<MAC,NSHG.System> Systems;
         static void Main(string[] args)
         {
-            Dictionary<MAC,NSHG.System> Systems = new Dictionary<MAC, NSHG.System>();
-            
-            //if (LoadNetwork())
-            //{
+            Systems = new Dictionary<MAC, NSHG.System>();
 
-            //}
+            if (!LoadNetwork("sys1.xml"))
+            {
+
+            }
 
 
-        }
+    }
 
 
     }
