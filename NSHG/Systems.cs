@@ -6,33 +6,37 @@ using NSHG.Packet;
 using System.Xml;
 namespace NSHG
 {
-    
     public class System
     {
-        readonly MAC MacAddress;
+        public readonly MAC MacAddress;
+
+        public IP DefaultGateway;
+
+        Dictionary<IP,MAC> Connections;
         
-        IP DefaultGateway;
+        
+        private event Action<Byte[],MAC> OnRecievedPacket;
+        private event Action<Byte[],MAC> OnCorruptPacket;
+        private event Action<IPv4Header,MAC> OnICMPPacket;
 
-        MAC[] Connections;
 
-        System(MAC MACAddress, IP DefaultGateway, MAC[] Connections)
+        private bool respondToEcho;
+
+
+        System(MAC MACAddress, IP DefaultGateway, MAC[] connections, IP[] LocalIPs)
         {
             this.MacAddress = MACAddress;
             this.DefaultGateway = DefaultGateway;
-            this.Connections = Connections;
-        }
-
-        public void Packet(Byte[] datagram)
-        {
             
+
+            OnICMPPacket += handleICMPPacket;
         }
 
-        public System FromNode(XmlNode Parent)
+        public static System FromNode(XmlNode Parent)
         {
             XmlNodeList nodes = Parent.ChildNodes;
             IP dg = null;
             MAC mac = null;
-            List<MAC> connections = new List<MAC>();
             foreach (XmlNode node in nodes)
             {
                 switch (node.Name)
@@ -43,32 +47,67 @@ namespace NSHG
                     case "DefaultGateway":
                         dg = IP.Parse(node.InnerText);
                         break;
-                    case "Connections":
-                        foreach (XmlNode n in node.ChildNodes)
-                        {
-                            if (n.Name == "MAC")
-                            {
-                                connections.Add(MAC.Parse(n.InnerText));
-                            }
-                        }
-                        break;
                 }
             }
-            if (dg == null || mac == null || connections.Count == 0)
+            if (dg == null || mac == null)
             {
                 throw new Exception("Invalid System XML");
             }
-            
-            return new System(mac,dg, connections.ToArray());
 
+            return new System(mac, dg);
+
+
+        }
+        
+        public void Packet(byte[] datagram, MAC c)
+        {
+            OnRecievedPacket.BeginInvoke(datagram, c, null, null);
+            IPv4Header Data;
+            try
+            {
+                Data = new IPv4Header(datagram);
+            }
+            catch
+            {
+                OnCorruptPacket.BeginInvoke(datagram, c, null, null);
+                return;
+            }
+           
+            switch (Data.Protocol)
+            {
+                case IPv4Header.ProtocolType.ICMP:
+                    OnICMPPacket.BeginInvoke(Data, c, null, null);
+                    break;
+                default:
+                    break;
+            }
+            
+            
+        }
+        
+        private void handleICMPPacket(IPv4Header datagram, MAC c)
+        {
+            switch(datagram.Datagram[0])
+            {
+                case 0:
+
+                    break;
+                case 8:
+
+                    break;
+            }
+        }
+
+        private void ping()
+        {
 
         }
     }
 
-    public class EchoServer : System
-    {
+    //public class EchoServer : System
+    //{
 
-    }
+    //}
 
 
 }

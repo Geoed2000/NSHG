@@ -7,10 +7,30 @@ namespace NSHG
 {
     namespace Packet
     {
+        public abstract class Header
+        {
+            public static UInt16 CalculateChecksum(byte[] data)
+            {
+                UInt16 current;
+                UInt32 total = 0;
+                for (int i = 0; i < data.Length; i += 2)
+                {
+                    current = (UInt16)((data[i] << 8) + data[i + 1]);
+                    total += current;
+                    while ((total >> 16) > 0) // if the value is > 65536(2^16) then remove the 256 
+                    {
+                        total = (total & 0xFFFF) + (total >> 16);
+                    }
+                }
+                return (UInt16)~total;
+
+            }
+        }
+        
         /// <summary>
         /// This class defines the IPV4 header bit by bit accurate to a real life example
         /// </summary>
-        public class IPv4Header
+        public class IPv4Header : Header
         {
             // Depreciated
             public class Option
@@ -260,7 +280,7 @@ namespace NSHG
             /// <param name="start">Starting byte in the array</param>
             /// <param name="length">Amount of bytes to read, must be divisible by 2, start + length >= data.length</param>
             /// <returns>16bit unsinged one's comliment sum</returns>
-            private static UInt16 CalculateChecksum (byte[] data)
+            static UInt16 CalculateChecksum (byte[] data)
             {
                 UInt16 current;
                 UInt32 total = 0;
@@ -395,7 +415,7 @@ namespace NSHG
             public  IP SourceAddress;
             public  IP DestinationAddress;
             public  byte[] Options;             
-            public byte[] Datagram;
+            public  byte[] Datagram;
 
 
             // Constructor(s)
@@ -498,15 +518,81 @@ namespace NSHG
                 
                 return bytes.ToArray();
             }
-            
+
+            public override int GetHashCode()
+            {
+                return HeaderChecksum;
+            }
+            public override bool Equals(object obj)
+            {
+                if (obj.GetType() != GetType())
+                {
+                    return false;
+                }
+                IPv4Header header = (IPv4Header)obj;
+                if (header.IHL == IHL && 
+                    header.TOS == TOS && 
+                    header.Length == Length && 
+                    header.Identification == Identification && 
+                    header.RES == RES &&
+                    header.DF == DF &&
+                    header.MF == MF &&
+                    header.FragmentOffset == FragmentOffset &&
+                    header.TTL == TTL &&
+                    header.Protocol == Protocol &&
+                    header.SourceAddress == SourceAddress &&
+                    header.DestinationAddress == DestinationAddress &&
+                    header.Options == Options &&
+                    header.Datagram == Datagram)
+                {
+                    return true;
+                }
+                return false;
+
+            }
+
         }
         
-        public class ICMPHeader
+        public abstract class ICMPHeader : Header
         {
-            byte Type;
-            byte Code;
-            UInt16 Checksum;
+            public byte ICMPType;
+            public byte Code;
+            public UInt16 Checksum;
             
+            public virtual Byte[] ToBytes()
+            {
+                List<byte> bytes = new List<byte>();
+                bytes.Add(ICMPType);
+                bytes.Add(Code);
+                bytes.AddRange(BitConverter.GetBytes(CalculateChecksum(bytes.ToArray())));
+                return bytes.ToArray();
+            }
+        }
+
+        public class ICMPEchoReply : ICMPHeader
+        {
+            public ICMPEchoReply()
+            {
+                ICMPType = 0;
+                Code = 0;
+
+            }
+
+            public ICMPEchoReply()
+            {
+                
+            }
+            
+        }
+
+        public class ICMPEchoRequest : ICMPHeader
+        {
+            public ICMPEchoRequest()
+            {
+                ICMPType = 8;
+                Code = 0;
+
+            }
         }
     }
 }
