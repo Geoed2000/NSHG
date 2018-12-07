@@ -14,7 +14,6 @@ namespace Simulation
         struct Network
         {
             public Dictionary<MAC, NSHG.System> Systems;
-            public List<Connection> Connections;
         }
 
         private static Network LoadNetwork(string filepath)

@@ -6,77 +6,134 @@ using NSHG.Packet;
 using System.Xml;
 namespace NSHG
 {
+    
+    public class Adapter
+    {
+        public string Name;
+        public readonly MAC MyMACAddress;
+        public IP LocalIP;
+        public IP SubnetMask;
+        public IP DefaultGateway;
+        public Adapter OtherEnd;
+        public bool Connected;
+
+        public Adapter(MAC MACAddress)
+        {
+            MyMACAddress = MACAddress;
+        }
+
+        public bool Connect(Adapter a)
+        {
+            if (!Connected)
+            {
+                OtherEnd = a;
+                return true;
+            }
+            return false;
+        }
+
+        public void Reset()
+        {
+            Name = null;
+            LocalIP = null;
+            SubnetMask = null;
+            DefaultGateway = null;
+            OtherEnd = null;
+        }
+
+        public event Action<byte[],Adapter> OnRecievedPacket;
+
+        public void SendPacket(byte[] datagram)
+        {
+            OtherEnd.RecievePacket(datagram);
+        }
+
+        public void RecievePacket(byte[] datagram)
+        {
+            OnRecievedPacket.BeginInvoke(datagram, this, null, null);
+        }
+    }
+
     public class System
     {
-        public readonly MAC MacAddress;
+        public readonly uint ID;
 
-        public IP DefaultGateway;
-
-        Dictionary<IP,MAC> Connections;
+        private List<Adapter> Adapters;
         
-        
-        private event Action<Byte[],MAC> OnRecievedPacket;
-        private event Action<Byte[],MAC> OnCorruptPacket;
-        private event Action<IPv4Header,MAC> OnICMPPacket;
+        private event Action<Byte[],Adapter> OnRecievedPacket;
+        private event Action<Byte[],Adapter> OnCorruptPacket;
+        private event Action<IPv4Header,Adapter> OnICMPPacket;
 
 
         private bool respondToEcho;
 
 
-        System(MAC MACAddress, IP DefaultGateway, MAC[] connections, IP[] LocalIPs)
+        System(uint ID)
         {
-            this.MacAddress = MACAddress;
-            this.DefaultGateway = DefaultGateway;
+            this.ID = ID;
             
 
             OnICMPPacket += handleICMPPacket;
         }
 
+
+        public bool GetFreeAdapter(out Adapter a)
+        {
+            foreach (Adapter adapt in Adapters)
+            {
+                if (!adapt.Connected)
+                {
+                    a = adapt;
+                    return true;
+                }
+            }
+            a = null;
+            return false;
+        }
+        
+        // Packet Handeling
         public static System FromNode(XmlNode Parent)
         {
             XmlNodeList nodes = Parent.ChildNodes;
-            IP dg = null;
-            MAC mac = null;
-            foreach (XmlNode node in nodes)
+            uint ID = 0;
+            foreach (XmlNode n in nodes)
             {
-                switch (node.Name)
+                switch (n.Name)
                 {
-                    case "MAC":
-                        mac = MAC.Parse(node.InnerText);
-                        break;
-                    case "DefaultGateway":
-                        dg = IP.Parse(node.InnerText);
+                    case "ID":
+                        uint.TryParse(n.InnerText,out ID);
                         break;
                 }
             }
-            if (dg == null || mac == null)
+            if (ID == 0)
             {
-                throw new Exception("Invalid System XML");
+                throw new Exception("Invalid System XML ID not Specified");
             }
 
-            return new System(mac, dg);
+            return new System(ID);
 
 
         }
         
-        public void Packet(byte[] datagram, MAC c)
+        public void Packet(byte[] datagram, Adapter a)
         {
-            OnRecievedPacket.BeginInvoke(datagram, c, null, null);
+            OnRecievedPacket.BeginInvoke(datagram, a, null, null);
             IPv4Header Data;
             try
+
             {
                 Data = new IPv4Header(datagram);
             }
             catch
             {
-                OnCorruptPacket.BeginInvoke(datagram, c, null, null);
+                OnCorruptPacket.BeginInvoke(datagram, a, null, null);
                 return;
             }
            
             switch (Data.Protocol)
             {
                 case IPv4Header.ProtocolType.ICMP:
-                    OnICMPPacket.BeginInvoke(Data, c, null, null);
+                    OnICMPPacket.BeginInvoke(Data, a, null, null);
                     break;
                 default:
                     break;
@@ -85,7 +142,7 @@ namespace NSHG
             
         }
         
-        private void handleICMPPacket(IPv4Header datagram, MAC c)
+        private void handleICMPPacket(IPv4Header datagram, Adapter a)
         {
             switch(datagram.Datagram[0])
             {
