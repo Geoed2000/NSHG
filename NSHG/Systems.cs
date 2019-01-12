@@ -9,22 +9,140 @@ namespace NSHG
     
     public class Adapter
     {
-        public string Name;
-        public readonly MAC MyMACAddress;
-        public IP LocalIP;
-        public IP SubnetMask;
-        public IP DefaultGateway;
-        public Adapter OtherEnd;
-        public bool Connected;
+        private string Name;
+        private readonly MAC MyMACAddress;
+        private IP LocalIP;
+        private IP SubnetMask;
+        private IP DefaultGateway;
+        private Adapter OtherEnd;
+        private uint OtherendID;
+        private bool _Connected;
+        public  bool Connected
+        {
+            get
+            {
+                return _Connected;
+            }
+        }
+        public  bool Associated;
 
         public Adapter(MAC MACAddress)
         {
             MyMACAddress = MACAddress;
         }
 
+        public Adapter(string Name,MAC MACAddress,IP LocalIP,IP SubnetMask, bool Connected)
+        {
+            this.Name = Name;
+            this.MyMACAddress = MACAddress;
+            this.LocalIP = LocalIP;
+            this.SubnetMask = SubnetMask;
+            this._Connected = Connected;
+            Associated = false;
+        }
+
+        public Adapter(string Name,MAC MACAddress,IP LocalIP,IP SubnetMask, uint otherend, bool Connected) : this(Name, MACAddress, LocalIP, SubnetMask, Connected)
+        {
+            OtherendID = otherend;
+        }
+
+        public static Adapter FromNode(XmlNode Parent,Dictionary<uint,NSHG.System> Systems)
+        {
+            string Name;
+            MAC MacAddress;
+            IP LocalIP;
+            IP SubnetMask;
+            uint OtherEndid;
+            bool Connected;
+
+            foreach (XmlNode n in Parent.ChildNodes)
+            {
+                switch (n.Name.ToLower())
+                {
+                    case "name":
+                        Name = n.InnerText;
+                        break;
+                    case "macaddress":
+                        try
+                        {
+                            MacAddress = MAC.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read MAC address, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "localip":
+                        try
+                        {
+                            LocalIP = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read IP address, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "subnetmask":
+                        try
+                        {
+                            SubnetMask = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read SubnetMask, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "defaultgateway":
+                        try
+                        {
+                            DefaultGateway = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read DefaultGateway, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "connectedsystem":
+                        try
+                        {
+                            OtherEndid = uint.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Connected System(otherend), invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "connected":
+                        try
+                        {
+                            Connected = bool.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Connected status, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                }
+            }
+
+            Adapter a = new Adapter
+        }
+
         public bool Connect(Adapter a)
         {
-            if (!Connected)
+            if (!_Connected)
             {
                 OtherEnd = a;
                 return true;
@@ -61,7 +179,8 @@ namespace NSHG
         private List<Adapter> Adapters;
         
         private event Action<Byte[],Adapter> OnRecievedPacket;
-        private event Action<Byte[],Adapter> OnCorruptPacket;
+        private event Action<Byte[],Adapter> OnCorruptPacket; 
+        private event Action<IPv4Header,Adapter> OnNotForMe;  
         private event Action<IPv4Header,Adapter> OnICMPPacket;
 
 
@@ -71,7 +190,7 @@ namespace NSHG
         System(uint ID)
         {
             this.ID = ID;
-            
+            Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
 
             OnICMPPacket += handleICMPPacket;
         }
@@ -81,7 +200,7 @@ namespace NSHG
         {
             foreach (Adapter adapt in Adapters)
             {
-                if (!adapt.Connected)
+                if (!adapt._Connected)
                 {
                     a = adapt;
                     return true;
@@ -90,7 +209,26 @@ namespace NSHG
             a = null;
             return false;
         }
-        
+
+        /// <summary>
+        /// will return an adapter that is connected but not associated to another adapter if not found will instead return a new adapter that isn't connected
+        /// </summary>
+        /// <param name="a">adapter that is free to connect to</param>
+        /// <param name="id">id of the system to be connected to</param>
+        /// <returns> if an adapter was found</returns>
+        public bool GetFreeAdapter(out Adapter a, uint id)
+        {
+            foreach (Adapter adapt in Adapters)
+            {
+                if (adapt.Connected == true && adapt.Associated == false)
+                {
+                    a = adapt;
+                    return true;
+                }
+            }
+            return GetFreeAdapter(out a);
+        }
+
         // Packet Handeling
         public static System FromNode(XmlNode Parent)
         {
@@ -114,7 +252,7 @@ namespace NSHG
 
 
         }
-        
+ 
         public void Packet(byte[] datagram, Adapter a)
         {
             OnRecievedPacket.BeginInvoke(datagram, a, null, null);
@@ -129,28 +267,48 @@ namespace NSHG
                 OnCorruptPacket.BeginInvoke(datagram, a, null, null);
                 return;
             }
-           
-            switch (Data.Protocol)
+            
+            if(Data.DestinationAddress == a.LocalIP)
             {
-                case IPv4Header.ProtocolType.ICMP:
-                    OnICMPPacket.BeginInvoke(Data, a, null, null);
-                    break;
-                default:
-                    break;
+                switch (Data.Protocol)
+                {
+                    case IPv4Header.ProtocolType.ICMP:
+                        OnICMPPacket.BeginInvoke(Data, a, null, null);
+                        break;
+                    default:
+                        break;
+                }
             }
-            
-            
+            else
+            {
+                OnNotForMe.BeginInvoke(Data, a, null, null);
+            }
         }
-        
+
+        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPlistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
+
         private void handleICMPPacket(IPv4Header datagram, Adapter a)
         {
             switch(datagram.Datagram[0])
             {
-                case 0:
-
+                case 0: // Echo Reply
+                    {
+                        ICMPEchoRequestReply header = new ICMPEchoRequestReply(datagram.Datagram);
+                        if (ICMPlistner.ContainsKey(header.Identifier))
+                        {
+                            ICMPlistner[header.Identifier].BeginInvoke(datagram, header, a, null, null);
+                        }
+                    }
                     break;
-                case 8:
+                case 8: // Echo Request
+                    if (respondToEcho)
+                    {
+                        ICMPEchoRequestReply header = new ICMPEchoRequestReply(datagram.Datagram);
+                        ICMPEchoRequestReply icmp = new ICMPEchoRequestReply(0, header.Identifier, (UInt16)(header.Sequencenumber + 1));
+                        IPv4Header ipv4 = new IPv4Header(datagram.Identification, false, false, 255, IPv4Header.ProtocolType.ICMP, a.LocalIP, datagram.SourceAddress, null, icmp.ToBytes());
 
+                        a.SendPacket(ipv4.ToBytes());
+                    }
                     break;
             }
         }
@@ -160,6 +318,7 @@ namespace NSHG
 
         }
     }
+
 
     //public class EchoServer : System
     //{

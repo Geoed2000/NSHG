@@ -28,7 +28,7 @@ namespace NSHG
         }
         
         /// <summary>
-        /// This class defines the IPV4 header bit by bit accurate to a real life example
+        /// This class defines the IPV4 header bit by bit accurate to real life as given by RFC 791
         /// </summary>
         public class IPv4Header : Header
         {
@@ -280,23 +280,7 @@ namespace NSHG
             /// <param name="start">Starting byte in the array</param>
             /// <param name="length">Amount of bytes to read, must be divisible by 2, start + length >= data.length</param>
             /// <returns>16bit unsinged one's comliment sum</returns>
-            static UInt16 CalculateChecksum (byte[] data)
-            {
-                UInt16 current;
-                UInt32 total = 0;
-                for (int i = 0; i < data.Length ; i += 2)
-                {
-                    current = (UInt16)((data[i] << 8) + data[i + 1]);
-                    total += current;
-                    while((total >> 16) > 0) // if the value is > 65536(2^16) then remove the 256 
-                    {
-                        total = (total & 0xFFFF) + (total >> 16);
-                    }    
-                }
-                return (UInt16)~total;
-
-            }
-
+            
             public enum ProtocolType : byte
             {
                 ICMP = 1,
@@ -569,30 +553,55 @@ namespace NSHG
             }
         }
 
-        public class ICMPEchoReply : ICMPHeader
+        public class ICMPEchoRequestReply : ICMPHeader
         {
-            public ICMPEchoReply()
+            public UInt16 Sequencenumber;
+            public UInt16 Identifier;
+
+            public ICMPEchoRequestReply(byte type, UInt16 Identify, UInt16 Seq)
             {
-                ICMPType = 0;
+                Sequencenumber = Seq;
+                Identifier = Identify;
+
+                ICMPType = type;
                 Code = 0;
 
             }
 
-            public ICMPEchoReply()
+            public ICMPEchoRequestReply(byte[] data)
             {
-                
+                if (data.Length != 8)
+                {
+                    throw new ArgumentException("Data wrong length");
+                }
+                ICMPType = data[0];
+                Code = data[1];
+                Sequencenumber = BitConverter.ToUInt16(data, 4);
+                Identifier     = BitConverter.ToUInt16(data, 6); 
             }
+
+            public override byte[] ToBytes()
+            {
+                List<byte> b = new List<byte>();
+                b.Add(ICMPType);
+                b.Add(Code);
+                b.AddRange(BitConverter.GetBytes((UInt16)0));
+                b.AddRange(BitConverter.GetBytes(Identifier));
+                b.AddRange(BitConverter.GetBytes(Sequencenumber));
+
+                UInt16 checksum = CalculateChecksum(b.ToArray());
+
+                byte[] checksumbytes = BitConverter.GetBytes(checksum);
+                b[2] = checksumbytes[0];
+                b[3] = checksumbytes[1];
+
+                return b.ToArray();
+            }
+
+
+
             
-        }
-
-        public class ICMPEchoRequest : ICMPHeader
-        {
-            public ICMPEchoRequest()
-            {
-                ICMPType = 8;
-                Code = 0;
-
-            }
+            
         }
     }
 }

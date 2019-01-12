@@ -1,22 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
   <System>
-    <MAC></MAC>
-    <dg></dg>
+    <ID>1</ID>    
   </System>
-  <System>
-    
+<System>
+    <ID>2</ID>    
   </System>
-  <System>
-    
-  </System>
-  <System>
-    
-  </System>
-  <System>
-    
-  </System>
-  <System>
-    
-  </System> 
+  <Connection>
+    <ID>1</ID>
+    <ID>2</ID>
+  </Connection>
+<Connection>
+    <ID>1</ID>
+    <ID>5</ID>
+  </Connection>
 </Root>

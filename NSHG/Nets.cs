@@ -103,10 +103,17 @@ namespace NSHG
             return Ip;
         }
     }
-
+    
     public class MAC
     {
+        private static Random rnd = new Random();
         // 00:00:00:00:00:00 to FF:FF:FF:FF:FF:FF
+        public static MAC Random()
+        {
+            byte[] bytes = new byte[6];
+            rnd.NextBytes(bytes);
+            return new MAC(bytes);
+        }
 
         private Byte[] Mac = new Byte[6];
 
@@ -159,6 +166,7 @@ namespace NSHG
                 return false;
             }
         }
+
 
         public override string ToString()
         {
