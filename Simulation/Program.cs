@@ -59,14 +59,17 @@ namespace Simulation
 
         private static Network LoadNetwork(string filepath)
         {
-            Dictionary<uint,NSHG.System> Systems = new Dictionary<uint, NSHG.System>();
+            Network network = new Network();
             
             XmlDocument doc = new XmlDocument();
             doc.Load(filepath);
             foreach (XmlNode node in doc.DocumentElement)
             {
                 string s = node.Name;
+
+                
                 NSHG.System sys;
+
                 switch (s)
                 {
                     case "System":
@@ -74,14 +77,14 @@ namespace Simulation
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("Added System \n    ID:" + sys.ID);
                         Console.ForegroundColor = ConsoleColor.White;
-                        Systems.Add(sys.ID, sys);
+                        network.Systems.Add(sys.ID, sys);
                         break;
 
                     case "Player":
-                        
 
+                        break;
                     case "Connection":
-                        if (Connect(Systems, node))
+                        if (Connect(network.Systems, node))
                         {
                             //success
                             Console.ForegroundColor = ConsoleColor.Green;
@@ -95,24 +98,16 @@ namespace Simulation
                             Console.WriteLine("Failed to add connection\n    {0}",node.InnerText);
                             Console.ForegroundColor = ConsoleColor.White;
                         }
-                        
-
-                        continue;
+                        break;
 
                     default:
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("Invalid Identifier " + s);
                         Console.ForegroundColor = ConsoleColor.White;
-                        continue;
+                        break;
                 }
-                
             }
-            Console.ForegroundColor = ConsoleColor.White;
-
-            return new Network()
-            {
-                Systems = Systems
-            };
+            return network;
         }
     
         static void Main(string[] args)
