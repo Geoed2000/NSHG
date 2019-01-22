@@ -186,15 +186,86 @@ namespace NSHG
 
         private bool respondToEcho;
 
+        System()
+        {
+            OnICMPPacket += handleICMPPacket;
+        }
 
-        System(uint ID)
+        System(uint ID):this()
         {
             this.ID = ID;
+            respondToEcho = false;
             Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
 
             OnICMPPacket += handleICMPPacket;
         }
 
+        System(uint ID, List<Adapter> Adapters = null, bool Respondtoecho = true):this()
+        {
+            this.ID = ID;
+            if (Adapters != null)
+            {
+                this.Adapters = Adapters;
+            }else
+            {
+                Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
+            }
+            this.respondToEcho = Respondtoecho;
+        }
+
+        public static System FromNode(XmlNode Parent, Dictionary<uint,System> Systems)
+        {
+            uint ID = 0;
+            List<Adapter> Adapters = new List<Adapter>();
+            bool respondToEcho = true;
+
+            foreach (XmlNode n in Parent.ChildNodes)
+            {
+                switch (n.Name.ToLower())
+                {
+                    case "id":
+                        if (uint.TryParse(n.InnerText, out ID))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("failed to read ID");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "adapter":
+                        try
+                        {
+                            Adapters.Add(Adapter.FromNode(n, Systems));
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read adapter");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "respondtoecho":
+                        try
+                        {
+                            respondToEcho = bool.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read flag: respondtoecho");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                }
+            }
+            if (ID == 0)
+            {
+                throw new Exception("Invalid System XML ID not Specified");
+            }
+
+            return new System(ID,Adapters,respondToEcho);
+
+
+        }
 
         public bool GetFreeAdapter(out Adapter a)
         {
@@ -230,29 +301,6 @@ namespace NSHG
         }
 
         // Packet Handeling
-        public static System FromNode(XmlNode Parent)
-        {
-            XmlNodeList nodes = Parent.ChildNodes;
-            uint ID = 0;
-            foreach (XmlNode n in nodes)
-            {
-                switch (n.Name)
-                {
-                    case "ID":
-                        uint.TryParse(n.InnerText,out ID);
-                        break;
-                }
-            }
-            if (ID == 0)
-            {
-                throw new Exception("Invalid System XML ID not Specified");
-            }
-
-            return new System(ID);
-
-
-        }
- 
         public void Packet(byte[] datagram, Adapter a)
         {
             OnRecievedPacket.BeginInvoke(datagram, a, null, null);
