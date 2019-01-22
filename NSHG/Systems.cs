@@ -11,7 +11,7 @@ namespace NSHG
     {
         private string Name;
         private readonly MAC MyMACAddress;
-        private IP LocalIP;
+        public IP LocalIP;
         private IP SubnetMask;
         private IP DefaultGateway;
         private Adapter OtherEnd;
@@ -26,34 +26,36 @@ namespace NSHG
         }
         public  bool Associated;
 
-        public Adapter(MAC MACAddress)
+        public event Action<byte[],Adapter> OnRecievedPacket;
+
+        public Adapter(MAC MACAddress, string name = null, IP LocalIP = null ,IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
         {
             MyMACAddress = MACAddress;
-        }
-
-        public Adapter(string Name,MAC MACAddress,IP LocalIP,IP SubnetMask, bool Connected)
-        {
-            this.Name = Name;
-            this.MyMACAddress = MACAddress;
-            this.LocalIP = LocalIP;
-            this.SubnetMask = SubnetMask;
-            this._Connected = Connected;
+            if (Connected)
+            {
+                Name = name;
+                this.LocalIP = LocalIP;
+                this.SubnetMask = SubnetMask;
+                this.DefaultGateway = DefaultGateway;
+                this.OtherendID = OtherendID;
+                _Connected = true;
+            }
+            else
+            {
+                _Connected = false;
+            }
             Associated = false;
         }
-
-        public Adapter(string Name,MAC MACAddress,IP LocalIP,IP SubnetMask, uint otherend, bool Connected) : this(Name, MACAddress, LocalIP, SubnetMask, Connected)
-        {
-            OtherendID = otherend;
-        }
-
+        
         public static Adapter FromNode(XmlNode Parent,Dictionary<uint,NSHG.System> Systems)
         {
-            string Name;
-            MAC MacAddress;
-            IP LocalIP;
-            IP SubnetMask;
-            uint OtherEndid;
-            bool Connected;
+            string Name = null;
+            MAC MacAddress = null;
+            IP LocalIP = null;
+            IP SubnetMask = null;
+            IP DefaultGateway = null;
+            uint OtherEndid = 0;
+            bool Connected = false;
 
             foreach (XmlNode n in Parent.ChildNodes)
             {
@@ -136,8 +138,13 @@ namespace NSHG
                         break;
                 }
             }
+            if (MacAddress == null)
+            {
+                throw new ArgumentException("MacAddress not provided");
+            }
 
-            Adapter a = new Adapter
+            Adapter a = new Adapter(MacAddress, Name, LocalIP, SubnetMask, DefaultGateway, OtherEndid, Connected);
+            return a;
         }
 
         public bool Connect(Adapter a)
@@ -145,6 +152,7 @@ namespace NSHG
             if (!_Connected)
             {
                 OtherEnd = a;
+                _Connected = true;
                 return true;
             }
             return false;
@@ -159,8 +167,7 @@ namespace NSHG
             OtherEnd = null;
         }
 
-        public event Action<byte[],Adapter> OnRecievedPacket;
-
+        
         public void SendPacket(byte[] datagram)
         {
             OtherEnd.RecievePacket(datagram);
@@ -271,7 +278,7 @@ namespace NSHG
         {
             foreach (Adapter adapt in Adapters)
             {
-                if (!adapt._Connected)
+                if (!adapt.Connected)
                 {
                     a = adapt;
                     return true;
@@ -287,7 +294,7 @@ namespace NSHG
         /// <param name="a">adapter that is free to connect to</param>
         /// <param name="id">id of the system to be connected to</param>
         /// <returns> if an adapter was found</returns>
-        public bool GetFreeAdapter(out Adapter a, uint id)
+        public bool GetConnectedUnassociatedAdapter(out Adapter a, uint id)
         {
             foreach (Adapter adapt in Adapters)
             {
@@ -297,7 +304,8 @@ namespace NSHG
                     return true;
                 }
             }
-            return GetFreeAdapter(out a);
+            a = null;
+            return false;
         }
 
         // Packet Handeling
@@ -333,6 +341,7 @@ namespace NSHG
             }
         }
 
+        //Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
         protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPlistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
 
         private void handleICMPPacket(IPv4Header datagram, Adapter a)
