@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <AdapterRead1>
+    <Adapter>
+      <name>Adapter 1</name>
+      <mac>ff:ff:ff:ff:ff:ff</mac>
+      <localip>192.168.1.2</localip>
+      <subnetmask>255.255.255.0</subnetmask>
+      <defaultgateway>192.168.1.1</defaultgateway>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+  </AdapterRead1>
+  
+  
+  <SystemRead1>
+    <System>
+      <ID>1</ID>
+      <RespondToEcho>True</RespondToEcho>
+      <Adapter>
+        <name>Adapter 1</name>
+        <mac>ff:ff:ff:ff:ff:ff</mac>
+        <localip>192.168.1.2</localip>
+        <subnetmask>255.255.255.0</subnetmask>
+        <defaultgateway>192.168.1.1</defaultgateway>
+        <connectedsystem>1</connectedsystem>
+        <connected>True</connected>
+      </Adapter>
+    </System>
+  </SystemRead1>
+  
+</root>

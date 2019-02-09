@@ -552,7 +552,7 @@ namespace NSHG
                 return bytes.ToArray();
             }
         }
-
+        
         public class ICMPEchoRequestReply : ICMPHeader
         {
             public UInt16 Sequencenumber;

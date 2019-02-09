@@ -16,4 +16,10 @@
     <ProjectReference Include="..\NSHG\PCL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="XMLFile.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
