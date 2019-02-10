@@ -10,6 +10,7 @@ namespace NSHG
     public class Adapter
     {
         private string Name;
+        private uint sysID;
         private readonly MAC MyMACAddress;
         public IP LocalIP;
         private IP SubnetMask;
@@ -28,9 +29,10 @@ namespace NSHG
 
         public event Action<byte[],Adapter> OnRecievedPacket;
 
-        public Adapter(MAC MACAddress, string name = null, IP LocalIP = null ,IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
+        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null ,IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
         {
             MyMACAddress = MACAddress;
+            this.sysID = sysID;
             if (Connected)
             {
                 Name = name;
@@ -50,6 +52,7 @@ namespace NSHG
         public static Adapter FromNode(XmlNode Parent,Dictionary<uint,NSHG.System> Systems)
         {
             string Name = null;
+            uint sysID = 0;
             MAC MacAddress = null;
             IP LocalIP = null;
             IP SubnetMask = null;
@@ -63,6 +66,18 @@ namespace NSHG
                 {
                     case "name":
                         Name = n.InnerText;
+                        break;
+                    case "sysid":
+                        try
+                        {
+                            sysID = uint.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Adapter system ID, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
                         break;
                     case "macaddress":
                         try
@@ -138,12 +153,12 @@ namespace NSHG
                         break;
                 }
             }
-            if (MacAddress == null)
+            if (MacAddress == null||sysID == 0)
             {
-                throw new ArgumentException("MacAddress not provided");
+                throw new ArgumentException("MacAddress or SYSID not provided");
             }
 
-            Adapter a = new Adapter(MacAddress, Name, LocalIP, SubnetMask, DefaultGateway, OtherEndid, Connected);
+            Adapter a = new Adapter(MacAddress, sysID, Name, LocalIP, SubnetMask, DefaultGateway, OtherEndid, Connected);
             return a;
         }
 
@@ -197,7 +212,7 @@ namespace NSHG
         System(uint ID)
         {
             this.ID = ID;
-            Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
+            Adapters = new List<Adapter>();
 
             OnICMPPacket += handleICMPPacket;
         }
@@ -322,7 +337,7 @@ namespace NSHG
             }
         }
 
-        private void ping()
+        public void ping(IP Recipient)
         {
 
         }
