@@ -106,6 +106,9 @@ namespace NSHG
     
     public class MAC
     {
+
+        private Byte[] Mac = new Byte[6];
+
         private static Random rnd = new Random();
         // 00:00:00:00:00:00 to FF:FF:FF:FF:FF:FF
         public static MAC Random()
@@ -115,7 +118,7 @@ namespace NSHG
             return new MAC(bytes);
         }
 
-        private Byte[] Mac = new Byte[6];
+        
 
         public MAC(Byte[] MACAddress)
         {
@@ -187,7 +190,7 @@ namespace NSHG
             }
 
             Byte[] bmac = mac.ToBytes();
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 6; i++)
             {
                 if (Mac[i] != bmac[i]) return false;
             }

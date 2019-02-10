@@ -1,12 +1,10 @@
-﻿using System;
+﻿using NSHG.Packet;
+using System;
 using System.Collections.Generic;
-using System.Text;
-using NSHG;
-using NSHG.Packet;
 using System.Xml;
+using System.Xml.Serialization;
 namespace NSHG
 {
-    
     public class Adapter
     {
         private string Name;
@@ -49,7 +47,7 @@ namespace NSHG
             Associated = false;
         }
         
-        public static Adapter FromNode(XmlNode Parent,Dictionary<uint,NSHG.System> Systems)
+        public static Adapter FromXML(XmlNode Parent)
         {
             string Name = null;
             uint sysID = 0;
@@ -79,6 +77,7 @@ namespace NSHG
                             Console.ForegroundColor = ConsoleColor.White;
                         }
                         break;
+                    case "mac":
                     case "macaddress":
                         try
                         {
@@ -162,14 +161,56 @@ namespace NSHG
             return a;
         }
 
+        public XmlNode ToXML(XmlDocument doc)
+        {
+            XmlNode parent = doc.CreateElement("Adapter");
+
+            XmlNode nameNode = doc.CreateElement("Name");
+            nameNode.InnerText = this.Name;
+            parent.AppendChild(nameNode);
+
+            XmlNode MacNode = doc.CreateElement("MAC");
+            MacNode.InnerText = this.MyMACAddress.ToString();
+            parent.AppendChild(MacNode);
+
+            XmlNode LocalIpNode = doc.CreateElement("LocalIP");
+            LocalIpNode.InnerText = this.LocalIP.ToString();
+            parent.AppendChild(LocalIpNode);
+
+            XmlNode SubnetMaskNode = doc.CreateElement("SubnetMask");
+            SubnetMaskNode.InnerText = this.SubnetMask.ToString();
+            parent.AppendChild(SubnetMaskNode);
+
+            XmlNode DefaultGatewayNode = doc.CreateElement("DefaultGateway");
+            MacNode.InnerText = this.DefaultGateway.ToString();
+            parent.AppendChild(DefaultGatewayNode);
+
+            XmlNode OtherEndNode = doc.CreateElement("OtherEnd");
+            MacNode.InnerText = this.OtherendID.ToString();
+            parent.AppendChild(OtherEndNode);
+
+            XmlNode ConnectedNode = doc.CreateElement("MAC");
+            MacNode.InnerText = this.Connected.ToString();
+            parent.AppendChild(ConnectedNode);
+
+            return parent;
+        }
+
         public bool Connect(Adapter a)
         {
             if (!_Connected)
             {
                 OtherEnd = a;
                 _Connected = true;
+                Associated = true;
+                return true;
+            }else if (Associated == false)
+            {
+                OtherEnd = a;
+                Associated = true;
                 return true;
             }
+            
             return false;
         }
 
@@ -182,7 +223,34 @@ namespace NSHG
             OtherEnd = null;
         }
 
-        
+        public override bool Equals(object obj)
+        {
+            Adapter a;
+            try
+            {
+                a = (Adapter)obj;
+            }
+            catch (InvalidCastException)
+            {
+                return false;
+            }
+
+            if ((Name == a.Name)&&(MyMACAddress.Equals(a.MyMACAddress))&&(LocalIP.Equals(a.LocalIP))&&(SubnetMask.Equals(a.SubnetMask))&&(DefaultGateway.Equals(a.DefaultGateway))
+                &&(OtherendID == a.OtherendID)&&(Connected == a.Connected)&&(Associated == a.Associated))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return BitConverter.ToInt32(MyMACAddress.ToBytes(), 0);
+        }
+
         public void SendPacket(byte[] datagram)
         {
             OtherEnd.RecievePacket(datagram);
@@ -208,15 +276,103 @@ namespace NSHG
 
         private bool respondToEcho;
 
+        System()
+        {
+            OnICMPPacket += handleICMPPacket;
+        }
 
-        System(uint ID)
+        public System(uint ID):this()
         {
             this.ID = ID;
             Adapters = new List<Adapter>();
+            respondToEcho = false;
+            Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
 
             OnICMPPacket += handleICMPPacket;
         }
 
+        public System(uint ID, List<Adapter> Adapters = null, bool Respondtoecho = true):this()
+        {
+            this.ID = ID;
+            if (Adapters != null)
+            {
+                this.Adapters = Adapters;
+            }else
+            {
+                Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
+            }
+            this.respondToEcho = Respondtoecho;
+        }
+
+        public static System FromXML(XmlNode Parent)
+        {
+            uint ID = 0;
+            List<Adapter> Adapters = new List<Adapter>();
+            bool respondToEcho = true;
+
+            foreach (XmlNode n in Parent.ChildNodes)
+            {
+                switch (n.Name.ToLower())
+                {
+                    case "id":
+                        if (!uint.TryParse(n.InnerText, out ID))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("failed to read ID");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "adapter":
+                        try
+                        {
+                            Adapters.Add(Adapter.FromXML(n));
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read adapter");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "respondtoecho":
+                        try
+                        {
+                            respondToEcho = bool.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read flag: respondtoecho");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                }
+            }
+            if (ID == 0)
+            {
+                throw new Exception("Invalid System XML ID not Specified");
+            }
+
+            return new System(ID,Adapters,respondToEcho);
+
+
+        }
+
+        public XmlNode ToXML(XmlDocument doc)
+        {
+            XmlNode parent = doc.CreateElement("System");
+
+            XmlNode IDNode = doc.CreateElement("ID");
+            IDNode.InnerText = this.ID.ToString();
+            parent.AppendChild(IDNode);
+
+            foreach(Adapter a in Adapters)
+            {
+                parent.AppendChild(a.ToXML(doc));
+            }
+
+            return parent;
+        }
 
         public bool GetFreeAdapter(out Adapter a)
         {
@@ -253,29 +409,6 @@ namespace NSHG
         }
 
         // Packet Handeling
-        public static System FromNode(XmlNode Parent)
-        {
-            XmlNodeList nodes = Parent.ChildNodes;
-            uint ID = 0;
-            foreach (XmlNode n in nodes)
-            {
-                switch (n.Name)
-                {
-                    case "ID":
-                        uint.TryParse(n.InnerText,out ID);
-                        break;
-                }
-            }
-            if (ID == 0)
-            {
-                throw new Exception("Invalid System XML ID not Specified");
-            }
-
-            return new System(ID);
-
-
-        }
- 
         public void Packet(byte[] datagram, Adapter a)
         {
             OnRecievedPacket.BeginInvoke(datagram, a, null, null);
@@ -340,6 +473,35 @@ namespace NSHG
         public void ping(IP Recipient)
         {
 
+        }
+
+        public override bool Equals(object Obj)
+        {
+            System s;
+            bool Equal = true;
+
+            try
+            {
+                s = (System)Obj;
+            }
+            catch (InvalidCastException)
+            {
+                return false;
+            }
+
+            if (!((ID == s.ID) && (respondToEcho == s.respondToEcho))) Equal = false;
+
+            foreach (Adapter a in Adapters)
+            {
+                if (!s.Adapters.Contains(a)) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
+                                                           //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
+            }
+            foreach (Adapter a in s.Adapters)
+            {
+                if (!Adapters.Contains(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
+                                                          //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
+            }    
+            return Equal;
         }
     }
 

@@ -8,10 +8,10 @@ namespace XUnitTests
     {
        
 
-        public class Constructors
+        public class EqualsTests
         {
             [Fact]
-            public void Equals1()
+            public void Identical()
             {
                 IP ip0 = new IP(new byte[4] { 0, 0, 0, 0 });
                 
@@ -20,14 +20,23 @@ namespace XUnitTests
             }
 
             [Fact]
-            public void Equals2()
+            public void SameByteArray()
+            {
+                byte[] b = new byte[4] { 0, 0, 0, 0 };
+                IP ip0 = new IP(b);
+                IP ip1 = new IP(b);
+
+                Assert.True(ip0.Equals(ip1));
+            }
+
+            [Fact]
+            public void DifferentByteArray()
             {
                 IP ip0 = new IP(new byte[4] { 0, 0, 0, 0 });
                 IP ip1 = new IP(new byte[4] { 0, 0, 0, 0 });
 
                 Assert.True(ip0.Equals(ip1));
             }
-
             [Fact]
             public void Equals3()
             {
@@ -38,7 +47,7 @@ namespace XUnitTests
             }
         }
         
-        public class ToBytes
+        public class ToBytesTests
         {
 
         }
