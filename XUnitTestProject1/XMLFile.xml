@@ -3,6 +3,7 @@
   <AdapterRead1>
     <Adapter>
       <name>Adapter 1</name>
+      <sysid>1</sysid>
       <mac>ff:ff:ff:ff:ff:ff</mac>
       <localip>192.168.1.2</localip>
       <subnetmask>255.255.255.0</subnetmask>
@@ -19,6 +20,7 @@
       <RespondToEcho>True</RespondToEcho>
       <Adapter>
         <name>Adapter 1</name>
+        <sysid>1</sysid>
         <mac>ff:ff:ff:ff:ff:ff</mac>
         <localip>192.168.1.2</localip>
         <subnetmask>255.255.255.0</subnetmask>

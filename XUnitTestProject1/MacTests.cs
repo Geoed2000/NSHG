@@ -8,6 +8,27 @@ namespace XUnitTests
 {
     public class MacTests
     {
+        public class ToStringTests
+        {
+            [Fact]
+            public void SameObject()
+            {
+                Byte[] b = new byte[]
+                {
+                    255,
+                    255,
+                    255,
+                    255,
+                    255,
+                    255
+                };
+
+                MAC m = new MAC(b);
+
+                Assert.Equal("FF:FF:FF:FF:FF:FF",m.ToString());
+            }
+        }
+
         public class EqualsTests
         {
             [Fact]

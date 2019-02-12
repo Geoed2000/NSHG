@@ -1,0 +1,76 @@
+﻿<Window x:Class="Editor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Editor"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition Width="80"></ColumnDefinition>
+            <ColumnDefinition Width="3*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="20"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal">
+            <Button x:Name="SaveBtn"   Click="SaveBtn_Click"   Padding="5,0">Save</Button>
+            <Button x:Name="SaveAsBtn" Click="SaveAsBtn_Click" Padding="5,0">Save As</Button>
+            <Button x:Name="NewBtn"    Click="NewBtn_Click"    Padding="5,0">New</Button>
+            <Button x:Name="OpenBtn"   Click="OpenBtn_Click"   Padding="5,0">Open</Button>
+            <Button x:Name="CloseBtn"  Click="CloseBtn_Click"  Padding="5,0">Close</Button>
+        </StackPanel>
+
+        <ScrollViewer Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="1">
+            <StackPanel>
+                <Label HorizontalAlignment="Center">Systems</Label>
+                <ListBox x:Name="Systems">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock HorizontalAlignment="Center"                 Text="{Binding Path=ID}" />
+                                <TextBlock HorizontalAlignment="Center" Grid.Column="1" Text="{Binding Path=Type}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                <Label HorizontalAlignment="Center">Connections</Label>
+                <ListBox x:Name="Connections">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Padding="5,0,10,0" Grid.Column="0" Text="{Binding Path=ID1}" />
+                                <TextBlock Grid.Column="1" Text="-" />
+                                <TextBlock Padding="10,0,0,0" Grid.Column="2" Text="{Binding Path=ID2}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Column="1" Grid.Row="1">
+            <Button x:Name="SelectSystemButton" Click="SelectSystemButton_Click">SelectSystem</Button>
+            <Button x:Name="SaveSystemButton" Click="SaveSystemButton_Click">SaveSystem</Button>
+        </StackPanel>
+
+        <Frame x:Name="Frame" Grid.Column="2" Grid.Row="1">
+            
+        </Frame>
+
+    </Grid>
+</Window>

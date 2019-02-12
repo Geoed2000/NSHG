@@ -174,8 +174,7 @@ namespace NSHG
         public override string ToString()
         {
             string s = BitConverter.ToString(Mac);
-            s.Replace('-', ':');
-            return s;           
+            return s.Replace('-', ':');         
         }
         public override bool Equals(object obj)
         {

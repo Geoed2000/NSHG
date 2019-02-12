@@ -19,7 +19,7 @@ namespace XUnitTests
                 IP Subnet = IP.Parse("255.255.255.0");
                 IP DefaultG = IP.Parse("192.168.1.1");
 
-                NSHG.Adapter a = new NSHG.Adapter(mac, name, localip, Subnet, DefaultG, 1, true);
+                NSHG.Adapter a = new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true);
                 NSHG.Adapter a2 = null;
                 XmlDocument doc = new XmlDocument();
                 doc.Load("XMLFile.xml");
@@ -58,7 +58,7 @@ namespace XUnitTests
                 IP Subnet = IP.Parse("255.255.255.0");
                 IP DefaultG = IP.Parse("192.168.1.1");
 
-                a.Add(new NSHG.Adapter(mac, name, localip, Subnet, DefaultG, 1, true));
+                a.Add(new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true));
 
                 s1 = new NSHG.System(1, a, true);
 

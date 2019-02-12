@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simulation", "Simulation\Si
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test Set", "XUnitTestProject1\Test Set.csproj", "{F054641E-2C0E-440B-9BFF-02982319A570}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Editor", "Editor\Editor.csproj", "{ACA93BDD-7BD4-4E0E-A21F-7F6C5CB75950}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{F054641E-2C0E-440B-9BFF-02982319A570}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F054641E-2C0E-440B-9BFF-02982319A570}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F054641E-2C0E-440B-9BFF-02982319A570}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACA93BDD-7BD4-4E0E-A21F-7F6C5CB75950}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACA93BDD-7BD4-4E0E-A21F-7F6C5CB75950}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACA93BDD-7BD4-4E0E-A21F-7F6C5CB75950}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACA93BDD-7BD4-4E0E-A21F-7F6C5CB75950}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

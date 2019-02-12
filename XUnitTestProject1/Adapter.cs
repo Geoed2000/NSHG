@@ -17,7 +17,7 @@ namespace XUnitTests
             IP Subnet = IP.Parse("255.255.255.0");
             IP DefaultG = IP.Parse("192.168.1.1");
 
-            NSHG.Adapter a = new NSHG.Adapter(mac, name, localip, Subnet, DefaultG, 1, true);
+            NSHG.Adapter a = new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true);
 
 
             Assert.True(a.Equals(a));
@@ -32,8 +32,8 @@ namespace XUnitTests
             IP Subnet = IP.Parse("255.255.255.0");
             IP DefaultG = IP.Parse("192.168.1.1");
 
-            NSHG.Adapter a1 = new NSHG.Adapter(mac, name, localip, Subnet, DefaultG, 1, true);
-            NSHG.Adapter a2 = new NSHG.Adapter(mac, name, localip, Subnet, DefaultG, 1, true);
+            NSHG.Adapter a1 = new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true);
+            NSHG.Adapter a2 = new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true);
 
 
             Assert.True(a1.Equals(a2));
@@ -54,8 +54,8 @@ namespace XUnitTests
             IP Subnet2   = IP.Parse("255.255.255.0");
             IP DefaultG2 = IP.Parse("192.168.1.1");
 
-            NSHG.Adapter a1 = new NSHG.Adapter(mac1, name1, localip1, Subnet1, DefaultG1, 1, true);
-            NSHG.Adapter a2 = new NSHG.Adapter(mac2, name2, localip2, Subnet2, DefaultG2, 1, true);
+            NSHG.Adapter a1 = new NSHG.Adapter(mac1, 1, name1, localip1, Subnet1, DefaultG1, 1, true);
+            NSHG.Adapter a2 = new NSHG.Adapter(mac2, 1, name2, localip2, Subnet2, DefaultG2, 1, true);
 
             Assert.True(a1.Equals(a2));
         }

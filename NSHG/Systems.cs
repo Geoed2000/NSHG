@@ -182,15 +182,15 @@ namespace NSHG
             parent.AppendChild(SubnetMaskNode);
 
             XmlNode DefaultGatewayNode = doc.CreateElement("DefaultGateway");
-            MacNode.InnerText = this.DefaultGateway.ToString();
+            DefaultGatewayNode.InnerText = this.DefaultGateway.ToString();
             parent.AppendChild(DefaultGatewayNode);
 
             XmlNode OtherEndNode = doc.CreateElement("OtherEnd");
-            MacNode.InnerText = this.OtherendID.ToString();
+            OtherEndNode.InnerText = this.OtherendID.ToString();
             parent.AppendChild(OtherEndNode);
 
-            XmlNode ConnectedNode = doc.CreateElement("MAC");
-            MacNode.InnerText = this.Connected.ToString();
+            XmlNode ConnectedNode = doc.CreateElement("Connected");
+            ConnectedNode.InnerText = this.Connected.ToString();
             parent.AppendChild(ConnectedNode);
 
             return parent;
@@ -286,7 +286,6 @@ namespace NSHG
             this.ID = ID;
             Adapters = new List<Adapter>();
             respondToEcho = false;
-            Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
 
             OnICMPPacket += handleICMPPacket;
         }
@@ -299,7 +298,7 @@ namespace NSHG
                 this.Adapters = Adapters;
             }else
             {
-                Adapters = new List<Adapter> { new Adapter(MAC.Random()), new Adapter(MAC.Random()) };
+                Adapters = new List<Adapter>();
             }
             this.respondToEcho = Respondtoecho;
         }

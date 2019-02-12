@@ -5,6 +5,7 @@
     <RespondToEcho>True</RespondToEcho>
     <Adapter>
       <name>Adapter 1</name>
+      <sysid>1</sysid>
       <mac>ff:ff:ff:ff:ff:ff</mac>
       <localip>192.168.1.2</localip>
       <subnetmask>255.255.255.0</subnetmask>
@@ -19,6 +20,7 @@
     <RespondToEcho>True</RespondToEcho>
     <Adapter>
       <name>Adapter 1</name>
+      <sysid>2</sysid>
       <mac>ff:ff:ff:ff:ff:fe</mac>
       <localip>192.168.1.3</localip>
       <subnetmask>255.255.255.0</subnetmask>
@@ -33,6 +35,7 @@
     <RespondToEcho>True</RespondToEcho>
     <Adapter>
       <name>Adapter 1</name>
+      <sysid>3</sysid>
       <mac>ff:ff:ff:ff:ff:fd</mac>
       <localip>192.168.1.1</localip>
       <subnetmask>255.255.255.0</subnetmask>
@@ -42,6 +45,7 @@
     </Adapter>
     <Adapter>
       <name>Adapter 2</name>
+      <sysid>3</sysid>
       <mac>ff:ff:ff:ff:ff:fc</mac>
       <localip>192.168.1.1</localip>
       <subnetmask>255.255.255.0</subnetmask>
