@@ -21,7 +21,7 @@ namespace Editor
     /// </summary>
     public partial class SystemEditor : Page
     {
-        public SystemEditor(NSHG.System s)
+        public SystemEditor(NSHG.Network network, NSHG.System s)
         {
             InitializeComponent();
         }

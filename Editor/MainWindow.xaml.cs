@@ -143,6 +143,7 @@ namespace Editor
             }
         }
 
+
         private void SelectSystemButton_Click(object sender, RoutedEventArgs e)
         {
             if (NetworkLoaded && Systems.SelectedItem != null)
@@ -152,13 +153,14 @@ namespace Editor
                 switch (s.GetType().ToString())
                 {
                     case "NSHG.System":
+                        Frame.Content = new SystemEditor(network, s);
                         break;
                 }
             }
             
         }
 
-        private void SaveSystemButton_Click(object sender, RoutedEventArgs e)
+        private void SelectConnectionButton_Click(object sender, RoutedEventArgs e)
         {
 
         }

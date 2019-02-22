@@ -28,7 +28,7 @@
         <ScrollViewer Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="1">
             <StackPanel>
                 <Label HorizontalAlignment="Center">Systems</Label>
-                <ListBox x:Name="Systems">
+                <ListBox x:Name="Systems" MouseRightButtonDown="Systems_MouseRightButtonDown">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid >
@@ -42,7 +42,7 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                
+                <Button x:Name="SelectSystemButton" Click="SelectSystemButton_Click" Margin="0,0,0,10">SelectSystem</Button>
                 <Label HorizontalAlignment="Center">Connections</Label>
                 <ListBox x:Name="Connections">
                     <ListBox.ItemTemplate>
@@ -60,12 +60,12 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <Button x:Name="SelectConnectionButton" Click="SelectConnectionButton_Click">SelectConnection</Button>
             </StackPanel>
         </ScrollViewer>
 
         <StackPanel Grid.Column="1" Grid.Row="1">
-            <Button x:Name="SelectSystemButton" Click="SelectSystemButton_Click">SelectSystem</Button>
-            <Button x:Name="SaveSystemButton" Click="SaveSystemButton_Click">SaveSystem</Button>
+            
         </StackPanel>
 
         <Frame x:Name="Frame" Grid.Column="2" Grid.Row="1">
