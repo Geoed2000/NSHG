@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace XMLEditor.Properties
+namespace WpfApp1.Properties
 {
 
 

@@ -14,16 +14,26 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using NSHG;
 
-namespace Editor
+namespace XMLEditor
 {
     /// <summary>
     /// Interaction logic for Page1.xaml
     /// </summary>
-    public partial class SystemEditor : Page
+    public partial class Editor : Page
     {
-        public SystemEditor(NSHG.Network network, NSHG.System s)
+        public Editor(NSHG.Network network, NSHG.System s, MainWindow parent)
         {
             InitializeComponent();
+
+            switch (s.GetType().ToString())
+            {
+                case "NSHG.System":
+                    Frame.Content = new Editors.SystemEditor(network, s, parent);
+                    break;
+                default:
+                    Frame.Content = new Label() { Content = "Error Reading System Type" };
+                    break;
+            }
         }
     }
 }

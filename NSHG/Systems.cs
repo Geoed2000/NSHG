@@ -7,9 +7,9 @@ namespace NSHG
 {
     public class Adapter
     {
-        private string Name;
+        public string Name { get; set; }
         private uint sysID;
-        private readonly MAC MyMACAddress;
+        public MAC MyMACAddress { get; set; }
         public IP LocalIP;
         private IP SubnetMask;
         private IP DefaultGateway;
@@ -127,6 +127,7 @@ namespace NSHG
                         }
                         break;
                     case "connectedsystem":
+                    case "otherend":
                         try
                         {
                             OtherEndid = uint.Parse(n.InnerText);
@@ -169,6 +170,10 @@ namespace NSHG
             nameNode.InnerText = this.Name;
             parent.AppendChild(nameNode);
 
+            XmlNode SysIDNode = doc.CreateElement("SysID");
+            SysIDNode.InnerText = this.sysID.ToString();
+            parent.AppendChild(SysIDNode);
+
             XmlNode MacNode = doc.CreateElement("MAC");
             MacNode.InnerText = this.MyMACAddress.ToString();
             parent.AppendChild(MacNode);
@@ -185,7 +190,7 @@ namespace NSHG
             DefaultGatewayNode.InnerText = this.DefaultGateway.ToString();
             parent.AppendChild(DefaultGatewayNode);
 
-            XmlNode OtherEndNode = doc.CreateElement("OtherEnd");
+            XmlNode OtherEndNode = doc.CreateElement("ConnectedSystem");
             OtherEndNode.InnerText = this.OtherendID.ToString();
             parent.AppendChild(OtherEndNode);
 
@@ -264,9 +269,9 @@ namespace NSHG
 
     public class System
     {
-        public readonly uint ID;
+        public uint ID;
 
-        private List<Adapter> Adapters;
+        public List<Adapter> Adapters;
         
         private event Action<Byte[],Adapter> OnRecievedPacket;
         private event Action<Byte[],Adapter> OnCorruptPacket; 
@@ -274,7 +279,7 @@ namespace NSHG
         private event Action<IPv4Header,Adapter> OnICMPPacket;
 
 
-        private bool respondToEcho;
+        public bool respondToEcho;
 
         System()
         {
@@ -301,6 +306,35 @@ namespace NSHG
                 Adapters = new List<Adapter>();
             }
             this.respondToEcho = Respondtoecho;
+        }
+
+        public override bool Equals(object Obj)
+        {
+            System s;
+            bool Equal = true;
+
+            try
+            {
+                s = (System)Obj;
+            }
+            catch (InvalidCastException)
+            {
+                return false;
+            }
+
+            if (!((ID == s.ID) && (respondToEcho == s.respondToEcho))) Equal = false;
+
+            foreach (Adapter a in Adapters)
+            {
+                if (!s.Adapters.Contains(a)) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
+                                                           //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
+            }
+            foreach (Adapter a in s.Adapters)
+            {
+                if (!Adapters.Contains(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
+                                                          //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
+            }
+            return Equal;
         }
 
         public static System FromXML(XmlNode Parent)
@@ -365,7 +399,11 @@ namespace NSHG
             IDNode.InnerText = this.ID.ToString();
             parent.AppendChild(IDNode);
 
-            foreach(Adapter a in Adapters)
+            XmlNode RespondToEchoNode = doc.CreateElement("RespondToEcho");
+            RespondToEchoNode.InnerText = this.respondToEcho.ToString();
+            parent.AppendChild(RespondToEchoNode);
+
+            foreach (Adapter a in Adapters)
             {
                 parent.AppendChild(a.ToXML(doc));
             }
@@ -407,6 +445,7 @@ namespace NSHG
             return false;
         }
 
+        // Network Layer
         // Packet Handeling
         public void Packet(byte[] datagram, Adapter a)
         {
@@ -440,12 +479,9 @@ namespace NSHG
             }
         }
 
-        //Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
-        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPlistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
-
         private void handleICMPPacket(IPv4Header datagram, Adapter a)
         {
-            switch(datagram.Datagram[0])
+            switch (datagram.Datagram[0])
             {
                 case 0: // Echo Reply
                     {
@@ -469,39 +505,17 @@ namespace NSHG
             }
         }
 
+        // Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
+        // Used to pass from network to Application layer
+        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPlistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
+
+        
+        // Application Layer
         public void ping(IP Recipient)
         {
 
         }
-
-        public override bool Equals(object Obj)
-        {
-            System s;
-            bool Equal = true;
-
-            try
-            {
-                s = (System)Obj;
-            }
-            catch (InvalidCastException)
-            {
-                return false;
-            }
-
-            if (!((ID == s.ID) && (respondToEcho == s.respondToEcho))) Equal = false;
-
-            foreach (Adapter a in Adapters)
-            {
-                if (!s.Adapters.Contains(a)) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
-                                                           //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
-            }
-            foreach (Adapter a in s.Adapters)
-            {
-                if (!Adapters.Contains(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
-                                                          //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
-            }    
-            return Equal;
-        }
+        
     }
 
 

@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using System.Windows.Forms;
 using NSHG;
 
-namespace Editor
+namespace XMLEditor
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -30,9 +30,28 @@ namespace Editor
         public MainWindow()
         {
             InitializeComponent();
-            NetworkLoaded = false;
+            network = Network.NewNet();
+            NetworkLoaded = true;
             saved = true;
         }
+
+        public void ReloadSystemPane()
+        {
+            List<BasicSys> basicSystems = new List<BasicSys>();
+            foreach (KeyValuePair<uint, NSHG.System> kvp in network.Systems)
+            {
+                basicSystems.Add(new BasicSys() { ID = kvp.Key.ToString(), Type = kvp.Value.GetType().Name.ToString() });
+            }
+            Systems.ItemsSource = basicSystems;
+
+            List<BasicConnection> basicConnections = new List<BasicConnection>();
+            foreach (Tuple<uint, uint> tuple in network.Connections)
+            {
+                basicConnections.Add(new BasicConnection() { ID1 = tuple.Item1.ToString(), ID2 = tuple.Item2.ToString() });
+            }
+            Connections.ItemsSource = basicConnections;
+        }
+
 
         private void OpenBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -52,21 +71,9 @@ namespace Editor
                 
                 network = NetworkManagement.LoadNetwork(file);
 
+                ReloadSystemPane();
+                Frame.Content = null;
 
-
-                List<BasicSys> basicSystems = new List<BasicSys>();
-                foreach(KeyValuePair<uint,NSHG.System> kvp in network.Systems)
-                {
-                    basicSystems.Add(new BasicSys(){ ID = kvp.Key.ToString(), Type = kvp.Value.GetType().Name.ToString() });
-                }
-                Systems.ItemsSource = basicSystems;
-
-                List<BasicConnection> basicConnections = new List<BasicConnection>();
-                foreach(Tuple<uint,uint> tuple in network.Connections)
-                {
-                    basicConnections.Add(new BasicConnection(){ ID1 = tuple.Item1.ToString(), ID2 = tuple.Item1.ToString() });
-                }
-                Connections.ItemsSource = basicConnections;
                 NetworkLoaded = true;
                 saved = false;
             }
@@ -77,20 +84,9 @@ namespace Editor
             if (saved)
             {
                 network = Network.NewNet();
-                
-                List<BasicSys> basicSystems = new List<BasicSys>();
-                foreach (KeyValuePair<uint, NSHG.System> kvp in network.Systems)
-                {
-                    basicSystems.Add(new BasicSys() { ID = kvp.Key.ToString(), Type = kvp.Value.GetType().Name.ToString() });
-                }
-                Systems.ItemsSource = basicSystems;
 
-                List<BasicConnection> basicConnections = new List<BasicConnection>();
-                foreach (Tuple<uint, uint> tuple in network.Connections)
-                {
-                    basicConnections.Add(new BasicConnection() { ID1 = tuple.Item1.ToString(), ID2 = tuple.Item1.ToString() });
-                }
-                Connections.ItemsSource = basicConnections;
+                ReloadSystemPane();
+                Frame.Content = null;
                 NetworkLoaded = true;
                 saved = false;
             }
@@ -136,10 +132,11 @@ namespace Editor
             {
                 network = new Network();
                 NetworkLoaded = false;
-                saved = false;
+                saved = true;
 
                 Systems.ItemsSource = null;
                 Connections.ItemsSource = null;
+                Frame.Content = null;
             }
         }
 
@@ -150,12 +147,8 @@ namespace Editor
             {
                 BasicSys sys = (BasicSys)Systems.SelectedItem;
                 NSHG.System s = network.Systems[uint.Parse(sys.ID)];
-                switch (s.GetType().ToString())
-                {
-                    case "NSHG.System":
-                        Frame.Content = new SystemEditor(network, s);
-                        break;
-                }
+                Frame.Content = null;
+                Frame.Content = new Editor(network, s, this);
             }
             
         }

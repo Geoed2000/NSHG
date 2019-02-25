@@ -60,7 +60,7 @@ namespace XUnitTests
 
                 a.Add(new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, 1, true));
 
-                s1 = new NSHG.System(1, a, true);
+                s1 = new NSHG.System(1, a, false);
 
 
                 XmlDocument doc = new XmlDocument();
@@ -79,6 +79,11 @@ namespace XUnitTests
                         }
                     }
                 }
+
+                Network net = Network.NewNet();
+                net.Systems.Add(s1.ID, s1);
+                NetworkManagement.SaveNetwork(net, "sys1.xml");
+
 
                 Assert.True(s1.Equals(s2));
 

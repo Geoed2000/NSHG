@@ -17,7 +17,7 @@
   <SystemRead1>
     <System>
       <ID>1</ID>
-      <RespondToEcho>True</RespondToEcho>
+      <RespondToEcho>False</RespondToEcho>
       <Adapter>
         <name>Adapter 1</name>
         <sysid>1</sysid>
