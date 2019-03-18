@@ -12,6 +12,7 @@ namespace NSHG
         public List<uint> OnlinePlayers;
         public List<uint> OfflinePlayers;
         public List<uint> UnallocatedPlayers;
+        public List<MAC> TakenMacAddresses;
 
         public static Network NewNet()
         {
@@ -21,6 +22,7 @@ namespace NSHG
             n.OnlinePlayers = new List<uint>();
             n.OfflinePlayers = new List<uint>();
             n.UnallocatedPlayers = new List<uint>();
+            n.TakenMacAddresses = new List<MAC>();
             return n;
         }
 
@@ -103,6 +105,10 @@ namespace NSHG
                         {
                             
                             network.Systems.Add(sys.ID, sys);
+                            foreach(Adapter a in sys.Adapters)
+                            {
+                                network.TakenMacAddresses.Add(a.MyMACAddress);
+                            }
                             Console.ForegroundColor = ConsoleColor.Green;
                             Console.WriteLine("Added System \n    ID:" + sys.ID);
                             Console.ForegroundColor = ConsoleColor.White;
