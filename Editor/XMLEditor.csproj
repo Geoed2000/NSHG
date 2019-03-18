@@ -60,6 +60,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Editors\ConnectionCreator.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Editors\SystemEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -74,6 +78,9 @@
     </Compile>
     <Compile Include="Editors\AdapterEditor.xaml.cs">
       <DependentUpon>AdapterEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Editors\ConnectionCreator.xaml.cs">
+      <DependentUpon>ConnectionCreator.xaml</DependentUpon>
     </Compile>
     <Compile Include="Editors\SystemEditor.xaml.cs">
       <DependentUpon>SystemEditor.xaml</DependentUpon>

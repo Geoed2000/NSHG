@@ -14,7 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using NSHG;
 
-namespace XMLEditor.Editors
+namespace XMLEditor
 {
     /// <summary>
     /// Interaction logic for SystemEditor.xaml
@@ -31,8 +31,15 @@ namespace XMLEditor.Editors
             sys = s;
             this.network = network;
             this.parent = parent;
+            UpdateView();
+        }
+
+        public void UpdateView()
+        {
+            parent.ReloadSystemPane();
+
             IDIn.Text = sys.ID.ToString();
-            Adapters.ItemsSource = s.Adapters;
+            Adapters.ItemsSource = sys.Adapters.ToArray();
             RTEIn.IsChecked = sys.respondToEcho;
         }
 
@@ -46,6 +53,10 @@ namespace XMLEditor.Editors
                     network.Systems[tmpId] = network.Systems[sys.ID];
                     network.Systems.Remove(sys.ID);
                     sys.ID = tmpId;
+                    foreach(Adapter a in sys.Adapters)
+                    {
+                        a.sysID = tmpId;
+                    }
                     parent.ReloadSystemPane();
                 }
                 else
@@ -75,6 +86,30 @@ namespace XMLEditor.Editors
                 window.Focus();
             }
             
+        }
+
+        private void NewAdapter_Click(object sender, RoutedEventArgs e)
+        {
+            MAC m;
+            do
+            {
+                m = MAC.Random();
+            } while (network.TakenMacAddresses.Contains(m));
+
+            sys.Adapters.Add(new Adapter(m, sys.ID));
+
+            network.TakenMacAddresses.Add(m);
+            UpdateView();
+        }
+
+        private void DeleteAdapter_Click(object sender, RoutedEventArgs e)
+        {
+            if (Adapters.SelectedIndex != -1)
+            {
+                network.TakenMacAddresses.Remove(sys.Adapters[Adapters.SelectedIndex].MyMACAddress);
+                sys.Adapters.RemoveAt(Adapters.SelectedIndex);
+                UpdateView();
+            }
         }
     }
 }

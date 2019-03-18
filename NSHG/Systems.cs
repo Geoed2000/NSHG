@@ -7,13 +7,13 @@ namespace NSHG
     public class Adapter
     {
         public string Name { get; set; }
-        private uint sysID;
+        public uint sysID;
         public MAC MyMACAddress { get; set; }
         public IP LocalIP;
-        private IP SubnetMask;
-        private IP DefaultGateway;
-        private Adapter OtherEnd;
-        private uint OtherendID;
+        public IP SubnetMask;
+        public IP DefaultGateway;
+        public Adapter OtherEnd;
+        public uint OtherendID;
         private bool _Connected;
         public  bool Connected
         {

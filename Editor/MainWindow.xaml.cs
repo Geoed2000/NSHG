@@ -52,7 +52,7 @@ namespace XMLEditor
             Connections.ItemsSource = basicConnections;
         }
 
-
+        // Top Bar
         private void OpenBtn_Click(object sender, RoutedEventArgs e)
         {
             if (saved)
@@ -141,6 +141,7 @@ namespace XMLEditor
         }
 
 
+
         private void SelectSystemButton_Click(object sender, RoutedEventArgs e)
         {
             if (NetworkLoaded && Systems.SelectedItem != null)
@@ -153,10 +154,50 @@ namespace XMLEditor
             
         }
 
-        private void SelectConnectionButton_Click(object sender, RoutedEventArgs e)
+        private void NewSystemButton_Click(object sender, RoutedEventArgs e)
         {
+            uint key = 0;
 
+            for(uint i = 1; i < network.Systems.Keys.Count; i++)
+            {
+                if (!network.Systems.ContainsKey(i))
+                {
+                    key = i;
+                    break;
+                }
+            }
+            if (key == 0) key = (uint)network.Systems.Keys.Count+1;
+            network.Systems.Add(key, new NSHG.System(key));
+            ReloadSystemPane();
         }
+
+        private void DeleteSystemButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Systems.SelectedItem != null)
+            {
+                uint key = uint.Parse(((BasicSys)Systems.SelectedItem).ID);
+                if (network.Systems.ContainsKey(key))
+                {
+                    network.Systems.Remove(key);
+                    ReloadSystemPane();
+                }
+            }
+        }
+
+
+        private void NewConnectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            new ConnectionCreator(this, ref network.Connections);
+        }
+
+        private void DeleteConnectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Connections.SelectedIndex != -1)
+            {
+                network.Connections.RemoveAt(Connections.SelectedIndex);
+                ReloadSystemPane();
+            }
+        }        
     }
 
     public class BasicSys

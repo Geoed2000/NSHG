@@ -28,7 +28,7 @@ namespace XMLEditor
             switch (s.GetType().ToString())
             {
                 case "NSHG.System":
-                    Frame.Content = new Editors.SystemEditor(network, s, parent);
+                    Frame.Content = new SystemEditor(network, s, parent);
                     break;
                 default:
                     Frame.Content = new Label() { Content = "Error Reading System Type" };

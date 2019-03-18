@@ -41,7 +41,11 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <Button x:Name="SelectSystemButton" Click="SelectSystemButton_Click" Margin="0,0,0,10">SelectSystem</Button>
+                <Button x:Name="SelectSystemButton" Click="SelectSystemButton_Click" Content="Select System"/>
+                <Button x:Name="NewSystemButton" Click="NewSystemButton_Click" Content="New System"/>
+                <Button x:Name="DeleteSystemButton" Click="DeleteSystemButton_Click" Margin="0,0,0,10" Content="Delete System"/>
+                
+
                 <Label HorizontalAlignment="Center">Connections</Label>
                 <ListBox x:Name="Connections">
                     <ListBox.ItemTemplate>
@@ -59,7 +63,8 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <Button x:Name="SelectConnectionButton" Click="SelectConnectionButton_Click">SelectConnection</Button>
+                <Button x:Name="DeleteConnectionButton" Click="DeleteConnectionButton_Click" Content="Delete Connection"/>
+                <Button x:Name="NewConnectionButton" Click="NewConnectionButton_Click" Content="New Connection"/>
             </StackPanel>
         </ScrollViewer>
         
