@@ -26,31 +26,31 @@
         
         <!--Name-->
         <Label Grid.Row="0" Grid.Column="0">Name</Label>
-        <TextBox x:Name="NameIn" Grid.Row="0" Grid.Column="1"/>
+        <TextBox x:Name="NameIn" Grid.Row="0" Grid.Column="1" LostFocus="NameIn_LostFocus"/>
 
         <!--Mac-->
         <Label Grid.Row="1" Grid.Column="0">MAC</Label>
-        <TextBox x:Name="MacIn" Grid.Row="1" Grid.Column="1"/>
+        <TextBox x:Name="MacIn" Grid.Row="1" Grid.Column="1" LostFocus="MacIn_LostFocus"/>
         
         <!--Connected-->
         <Label Grid.Row="2" Grid.Column="0">Connected</Label>
-        <CheckBox x:Name="ConnectedIn" Grid.Row="3" Grid.Column="1"/>
+        <CheckBox x:Name="ConnectedIn" Grid.Row="3" Grid.Column="1" LostFocus="ConnectedIn_LostFocus"/>
 
         <!--OtherEnd-->
         <Label Grid.Row="3" Grid.Column="0">OtherEndID</Label>
-        <TextBox x:Name="OtherEndIn" Grid.Row="3" Grid.Column="1"/>
+        <TextBox x:Name="OtherEndIn" Grid.Row="3" Grid.Column="1" LostFocus="OtherEndIn_LostFocus"/>
         
         <!--LocalIP-->
         <Label Grid.Row="4" Grid.Column="0">LocalIP</Label>
-        <TextBox x:Name="LocalIPIn" Grid.Row="4" Grid.Column="1"/>
+        <TextBox x:Name="LocalIPIn" Grid.Row="4" Grid.Column="1" LostFocus="LocalIPIn_LostFocus"/>
         
         <!--Subnet-->
         <Label Grid.Row="5" Grid.Column="0">Subnet</Label>
-        <TextBox x:Name="SubnetIn" Grid.Row="5" Grid.Column="1"/>
+        <TextBox x:Name="SubnetIn" Grid.Row="5" Grid.Column="1" LostFocus="SubnetIn_LostFocus"/>
         
         <!--DefaultGateway-->
         <Label Grid.Row="6" Grid.Column="0">DefaultGateway</Label>
-        <TextBox x:Name="DefaultGatewayIn" Grid.Row="6" Grid.Column="1"/>
+        <TextBox x:Name="DefaultGatewayIn" Grid.Row="6" Grid.Column="1" LostFocus="DefaultGatewayIn_LostFocus"/>
         
     </Grid>
 </Window>

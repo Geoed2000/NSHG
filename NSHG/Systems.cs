@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Xml;
-using System.Xml.Serialization;
 namespace NSHG
 {
     public class Adapter
@@ -272,18 +271,30 @@ namespace NSHG
         public uint ID;
 
         public List<Adapter> Adapters;
+
+        public List<String> Log;
         
         private event Action<Byte[],Adapter> OnRecievedPacket;
         private event Action<Byte[],Adapter> OnCorruptPacket; 
         private event Action<IPv4Header,Adapter> OnNotForMe;  
         private event Action<IPv4Header,Adapter> OnICMPPacket;
-
+        
 
         public bool respondToEcho;
 
-        System()
+
+        private UInt16 ICMPEchoreqSeq;
+
+        protected System()
         {
             OnICMPPacket += handleICMPPacket;
+            
+            Log = new List<string>();
+
+            ICMPEchoreqSeq = 0;
+            ICMPEchoreqSeq = 0;
+            PacketIdentification = 0;
+            defaulttimetolive = 30;
         }
 
         public System(uint ID):this()
@@ -291,8 +302,6 @@ namespace NSHG
             this.ID = ID;
             Adapters = new List<Adapter>();
             respondToEcho = false;
-
-            OnICMPPacket += handleICMPPacket;
         }
 
         public System(uint ID, List<Adapter> Adapters = null, bool Respondtoecho = true):this()
@@ -301,7 +310,8 @@ namespace NSHG
             if (Adapters != null)
             {
                 this.Adapters = Adapters;
-            }else
+            }
+            else
             {
                 Adapters = new List<Adapter>();
             }
@@ -486,9 +496,9 @@ namespace NSHG
                 case 0: // Echo Reply
                     {
                         ICMPEchoRequestReply header = new ICMPEchoRequestReply(datagram.Datagram);
-                        if (ICMPlistner.ContainsKey(header.Identifier))
+                        if (ICMPEcholistner.ContainsKey(header.Identifier))
                         {
-                            ICMPlistner[header.Identifier].BeginInvoke(datagram, header, a, null, null);
+                            ICMPEcholistner[header.Identifier].BeginInvoke(datagram, header, a, null, null);
                         }
                     }
                     break;
@@ -507,17 +517,35 @@ namespace NSHG
 
         // Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
         // Used to pass from network to Application layer
-        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPlistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
-
+        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
         
         // Application Layer
+        ushort PacketIdentification;
+        byte defaulttimetolive;
+        
         public void ping(IP Recipient)
         {
+            Adapter a = 
+            ICMPHeader icmp = new ICMPEchoRequestReply(8, 1, ICMPEchoreqSeq);
+            ICMPEcholistner.Add(ICMPEchoreqSeq, PingReponce);
+            
+            IPv4Header ipv4 = new IPv4Header(PacketIdentification++, false, false, defaulttimetolive, IPv4Header.ProtocolType.ICMP, a.LocalIP, Recipient, new byte[0], icmp.ToBytes());
 
+            Console.WriteLine("    " + ID.ToString() + " Pinging " + Recipient.ToString());
+            ICMPEchoreqSeq++;
+        }
+
+        public void PingReponce(IPv4Header Header, ICMPEchoRequestReply iCMPHeader, Adapter adapter)
+        {
+            Console.WriteLine("    " + ID.ToString() + " Recieved Reply From " + Header.SourceAddress.ToString());
         }
         
     }
 
+    public class Router : System
+    {
+        
+    }
 
     //public class EchoServer : System
     //{

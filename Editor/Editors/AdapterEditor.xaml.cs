@@ -24,5 +24,40 @@ namespace XMLEditor.Editors
         {
             InitializeComponent();
         }
+
+        private void NameIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void MacIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ConnectedIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void OtherEndIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void LocalIPIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void SubnetIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void DefaultGatewayIn_LostFocus(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
