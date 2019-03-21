@@ -5,7 +5,7 @@ using System.Xml;
 
 namespace NSHG
 {
-    public struct Network
+    public class Network
     {
         public Dictionary<uint, System> Systems;
         public List<Tuple<uint, uint>> Connections;
@@ -26,32 +26,27 @@ namespace NSHG
             return n;
         }
 
-
-    }
-
-    public class NetworkManagement
-    {
-        public static bool Connect(Network network, uint sysA, uint sysB)
+        public bool Connect(uint sysA, uint sysB)
         {
-            Adapter a,b;
-            if(network.Systems[sysA].GetConnectedUnassociatedAdapter(out a, sysB) && network.Systems[sysB].GetConnectedUnassociatedAdapter(out b, sysA))
+            Adapter a, b;
+            if (Systems[sysA].GetConnectedUnassociatedAdapter(out a, sysB) && Systems[sysB].GetConnectedUnassociatedAdapter(out b, sysA))
             {
                 a.Connect(b);
                 b.Connect(a);
-                network.Connections.Add(new Tuple<uint, uint>(sysA, sysB));
+                Connections.Add(new Tuple<uint, uint>(sysA, sysB));
                 return true;
             }
-            else if(network.Systems[sysA].GetFreeAdapter(out a) && network.Systems[sysB].GetFreeAdapter(out b))
+            else if (Systems[sysA].GetFreeAdapter(out a) && Systems[sysB].GetFreeAdapter(out b))
             {
                 a.Connect(b);
                 b.Connect(a);
-                network.Connections.Add(new Tuple<uint, uint>(sysA, sysB));
+                Connections.Add(new Tuple<uint, uint>(sysA, sysB));
                 return true;
             }
-            
+
             return false;
         }
-        public static bool Connect(Network network, XmlNode Parent)
+        public bool Connect(XmlNode Parent)
         {
 
             uint sys1 = 0;
@@ -71,12 +66,12 @@ namespace NSHG
                     }
                 }
             }
-            return Connect(network, sys1, sys2); 
+            return Connect(sys1, sys2);
         }
 
-        public static Network LoadNetwork(string filepath)
+        public static Network LoadNetwork(string filepath, Action<String> log)
         {
-            Network network = Network.NewNet();
+            Network network = NewNet();
             
             XmlDocument doc = new XmlDocument();
             doc.Load(filepath);
@@ -96,9 +91,8 @@ namespace NSHG
                         }
                         catch
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Reading System Failed");
-                            Console.ForegroundColor = ConsoleColor.White;
+                            
+                            log("Reading System Failed");
                             break;
                         }
                         try
@@ -109,16 +103,13 @@ namespace NSHG
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Added System \n    ID:" + sys.ID);
-                            Console.ForegroundColor = ConsoleColor.White;
+                            log("Added System \n    ID:" + sys.ID);
                             
                         }
                         catch
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("failed adding system to network");
-                            Console.ForegroundColor = ConsoleColor.White;
+                            
+                            log("failed adding system to network");
                         }
                         break;
 
@@ -126,32 +117,26 @@ namespace NSHG
 
                         break;
                     case "Connection":
-                        if (Connect(network, node))
+                        if (network.Connect(node))
                         {
                             //success
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Addedd connection\n    {0}", node.InnerText);
-                            Console.ForegroundColor = ConsoleColor.White;
+                            log("Addedd connection\n    " + node.InnerText);
                         }
                         else
                         {
                             //failure
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Failed to add connection\n    {0}",node.InnerText);
-                            Console.ForegroundColor = ConsoleColor.White;
+                            log("Failed to add connection\n    "+node.InnerText);
                         }
                         break;
 
                     default:
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Invalid Identifier " + s);
-                        Console.ForegroundColor = ConsoleColor.White;
+                        log("Invalid Identifier " + s);
                         break;
                 }
             }
             return network;
         }
-        public static bool SaveNetwork(Network network, string filepath)
+        public bool SaveNetwork(string filepath)
         {
             try
             {
@@ -159,12 +144,12 @@ namespace NSHG
                 XmlNode rootNode = file.CreateElement("root");
                 
 
-                foreach (KeyValuePair<uint, NSHG.System> entry in network.Systems)
+                foreach (KeyValuePair<uint, NSHG.System> entry in Systems)
                 {
                     rootNode.AppendChild(entry.Value.ToXML(file));
                 }
 
-                foreach (Tuple<uint, uint> connection in network.Connections)
+                foreach (Tuple<uint, uint> connection in Connections)
                 {
                     XmlNode c1 = file.CreateElement("ID");
                     c1.InnerText = connection.Item1.ToString();

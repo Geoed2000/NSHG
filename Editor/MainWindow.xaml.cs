@@ -69,7 +69,7 @@ namespace XMLEditor
                         return;
                 }
                 
-                network = NetworkManagement.LoadNetwork(file);
+                network = Network.LoadNetwork(file);
 
                 ReloadSystemPane();
                 Frame.Content = null;
@@ -111,7 +111,7 @@ namespace XMLEditor
                     return;
             }
 
-            NetworkManagement.SaveNetwork(network, file);
+            network.SaveNetwork(file);
             saved = true;
         }
 
@@ -122,7 +122,7 @@ namespace XMLEditor
                 return;
             }
 
-            NetworkManagement.SaveNetwork(network, file);
+            network.SaveNetwork(file);
             saved = true;
         }
 

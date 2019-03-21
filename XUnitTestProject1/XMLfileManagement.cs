@@ -82,7 +82,7 @@ namespace XUnitTests
 
                 Network net = Network.NewNet();
                 net.Systems.Add(s1.ID, s1);
-                NetworkManagement.SaveNetwork(net, "sys1.xml");
+                net.SaveNetwork("sys1.xml");
 
 
                 Assert.True(s1.Equals(s2));

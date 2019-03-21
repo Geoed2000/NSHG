@@ -24,12 +24,57 @@ namespace NSHG
         }
         public  bool Associated;
 
+        private readonly object SendLock;
+        private Queue<byte[]> _SendQueue;
+        public Queue<byte[]> SendQueue
+        {
+            get
+            {
+                lock (SendLock)
+                {
+                    return (_SendQueue);
+                }
+            }
+            set
+            {
+                lock (SendLock)
+                {
+                    _SendQueue = value;
+                }
+            }
+        }
+
+        private readonly object RecieveLock;
+        public Queue<byte[]> _RecieveQueue;
+        public Queue<byte[]> RecieveQueue
+        {
+            get
+            {
+                lock (RecieveLock)
+                {
+                    return (_RecieveQueue);
+                }
+            }
+            set
+            {
+                lock (RecieveLock)
+                {
+                    _RecieveQueue = value;
+                }
+            }
+        }
+ 
         public event Action<byte[],Adapter> OnRecievedPacket;
 
-        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null ,IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
+        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
         {
+            SendLock = new object();
+            RecieveLock = new object();
+
             MyMACAddress = MACAddress;
             this.sysID = sysID;
+            SendQueue = new Queue<byte[]>();
+            RecieveQueue = new Queue<byte[]>();
             if (Connected)
             {
                 Name = name;
@@ -239,15 +284,40 @@ namespace NSHG
                 return false;
             }
 
-            if ((Name == a.Name)&&(MyMACAddress.Equals(a.MyMACAddress))&&(LocalIP.Equals(a.LocalIP))&&(SubnetMask.Equals(a.SubnetMask))&&(DefaultGateway.Equals(a.DefaultGateway))
-                &&(OtherendID == a.OtherendID)&&(Connected == a.Connected)&&(Associated == a.Associated))
+            if (MyMACAddress == null)
+            {
+                if (a.MyMACAddress != null) return false;
+            }
+            else if (!MyMACAddress.Equals(a.MyMACAddress)) return false;
+
+            if (LocalIP == null)
+            {
+                if (a.LocalIP != null) return false;
+            }
+            else if (!LocalIP.Equals(a.LocalIP)) return false;
+
+            if (SubnetMask == null)
+            {
+                if (a.SubnetMask != null) return false;
+            }
+            else if (!SubnetMask.Equals(a.SubnetMask)) return false;
+
+            if (DefaultGateway == null)
+            {
+                if (a.DefaultGateway != null) return false;
+            }
+            else if (!DefaultGateway.Equals(a.DefaultGateway)) return false;
+
+
+
+
+
+
+            if ((Name == a.Name)&&(OtherendID == a.OtherendID)&&(Connected == a.Connected)&&(Associated == a.Associated))
             {
                 return true;
             }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         public override int GetHashCode()
@@ -257,12 +327,25 @@ namespace NSHG
 
         public void SendPacket(byte[] datagram)
         {
-            OtherEnd.RecievePacket(datagram);
+            SendQueue.Enqueue(datagram);
         }
 
         public void RecievePacket(byte[] datagram)
         {
-            OnRecievedPacket.BeginInvoke(datagram, this, null, null);
+            RecieveQueue.Enqueue(datagram);
+        }
+
+
+        public void Tick()
+        {
+            if (SendQueue.Count != 0)
+            {
+                OtherEnd.RecievePacket(SendQueue.Dequeue());
+            }
+            if (RecieveQueue.Count != 0)
+            {
+                OnRecievedPacket.Invoke(RecieveQueue.Dequeue(),this);
+            }
         }
     }
 
@@ -280,8 +363,8 @@ namespace NSHG
         private event Action<IPv4Header,Adapter> OnICMPPacket;
         
 
+ 
         public bool respondToEcho;
-
 
         private UInt16 ICMPEchoreqSeq;
 
@@ -523,29 +606,42 @@ namespace NSHG
         ushort PacketIdentification;
         byte defaulttimetolive;
         
-        public void ping(IP Recipient)
-        {
-            Adapter a = 
-            ICMPHeader icmp = new ICMPEchoRequestReply(8, 1, ICMPEchoreqSeq);
-            ICMPEcholistner.Add(ICMPEchoreqSeq, PingReponce);
+        //public void ping(IP Recipient)
+        //{
+        //    Adapter a;
+        //    ICMPHeader icmp = new ICMPEchoRequestReply(8, 1, ICMPEchoreqSeq);
+        //    ICMPEcholistner.Add(ICMPEchoreqSeq, PingReponce);
             
-            IPv4Header ipv4 = new IPv4Header(PacketIdentification++, false, false, defaulttimetolive, IPv4Header.ProtocolType.ICMP, a.LocalIP, Recipient, new byte[0], icmp.ToBytes());
+        //    IPv4Header ipv4 = new IPv4Header(PacketIdentification++, false, false, defaulttimetolive, IPv4Header.ProtocolType.ICMP, a.LocalIP, Recipient, new byte[0], icmp.ToBytes());
 
-            Console.WriteLine("    " + ID.ToString() + " Pinging " + Recipient.ToString());
-            ICMPEchoreqSeq++;
-        }
+        //    Console.WriteLine("    " + ID.ToString() + " Pinging " + Recipient.ToString());
+        //    ICMPEchoreqSeq++;
+        //}
 
         public void PingReponce(IPv4Header Header, ICMPEchoRequestReply iCMPHeader, Adapter adapter)
         {
             Console.WriteLine("    " + ID.ToString() + " Recieved Reply From " + Header.SourceAddress.ToString());
         }
-        
+
+        // AI
+
+        private event Action OnTick;
+
+        public void Tick()
+        {
+            foreach (Adapter A in Adapters)
+            {
+                A.Tick();
+            }
+            //Other AI Logic
+            OnTick.Invoke();
+        }
     }
 
-    public class Router : System
-    {
+    //public class Router : System
+    //{
         
-    }
+    //}
 
     //public class EchoServer : System
     //{

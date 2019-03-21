@@ -10,7 +10,7 @@ using NSHG;
 
 namespace Simulation
 {
-    class Program:NetworkManagement
+    class Program
     {
         
 
@@ -66,7 +66,7 @@ namespace Simulation
             if (input == "test")
             {
                 filepath = "sys1.xml";
-                network = LoadNetwork(filepath);
+                network = Network.LoadNetwork(filepath, Console.WriteLine);
                 networkloaded = true;
                 Console.WriteLine(network.Systems[1].ID);
                 Console.ReadLine();
@@ -79,12 +79,13 @@ namespace Simulation
                 switch (input)
                 {
                     case "load":
+                        Console.WriteLine("Enter filepath \n--> ");
                         string tmpfilepath = Console.ReadLine();
-                        
-                        network = LoadNetwork(tmpfilepath);
+
+                        network = Network.LoadNetwork(tmpfilepath);
                         networkloaded = true;
                         filepath = tmpfilepath;
-                        
+
                         break;
                     case "save":
                         if (!networkloaded)
@@ -95,20 +96,15 @@ namespace Simulation
                         {
                             Console.Write("Please enter save filepath: ");
                             string savepath = Console.ReadLine();
-                            if (SaveNetwork(network, savepath)) Console.WriteLine("Save successfull");
+                            if (network.SaveNetwork(savepath)) Console.WriteLine("Save successfull");
                             else Console.WriteLine("Save unsuccessfull");
                         }
                         break;
-                    case "new":
-                        break;
-                    case "edit":
-                        //network = edit(network);
-                        break;
+                    case "start":
                     case "help":
                         break;
                 }
             } while (input != "exit");
         }
-
     }
 }

@@ -21,8 +21,10 @@ namespace XMLEditor
     public partial class AdapterEditor : Window
     {
         Adapter a;
-        public AdapterEditor(Adapter a)
+        SystemEditor parent;
+        public AdapterEditor(ref Adapter a, SystemEditor parent)
         {
+            this.parent = parent;
             this.a = a;
             InitializeComponent();
             NameIn.Text = a.Name;
@@ -49,10 +51,12 @@ namespace XMLEditor
         }
 
         private void NameIn_LostFocus(object sender, RoutedEventArgs e)
-        {
+         {
             if (NameIn.Text.Trim() != "")
             {
-                a.Name = NameIn.Text; 
+                a.Name = NameIn.Text;
+                parent.UpdateView();
+                
             }
         }
 
@@ -64,6 +68,7 @@ namespace XMLEditor
                 if (MAC.TryParse(MacIn.Text, out NewMAC))
                 {
                     a.MyMACAddress = NewMAC;
+                    parent.UpdateView();
                 }
                 else
                 {
@@ -80,6 +85,7 @@ namespace XMLEditor
                 LocalIPIn.Focusable = true;
                 SubnetIn.Focusable = true;
                 DefaultGatewayIn.Focusable = true;
+                parent.UpdateView();
             }
             else
             {
@@ -87,6 +93,7 @@ namespace XMLEditor
                 LocalIPIn.Focusable = false;
                 SubnetIn.Focusable = false;
                 DefaultGatewayIn.Focusable = false;
+                parent.UpdateView();
             }
         }
 
@@ -96,6 +103,7 @@ namespace XMLEditor
             if (uint.TryParse(OtherEndIn.Text, out tmpId))
             {
                 a.OtherendID = tmpId;
+                parent.UpdateView();
             }
             else OtherEndIn.Text = "Invalid ID: "+OtherEndIn.Text;
         }
@@ -106,6 +114,7 @@ namespace XMLEditor
             if (IP.TryParse(LocalIPIn.Text, out tmpIP))
             {
                 a.LocalIP = tmpIP;
+                parent.UpdateView();
             }
             else LocalIPIn.Text = "Invalid IP: " + LocalIPIn.Text;
         }
@@ -116,6 +125,7 @@ namespace XMLEditor
             if (IP.TryParse(SubnetIn.Text, out tmpIP))
             {
                 a.SubnetMask= tmpIP;
+                parent.UpdateView();
             }
             else SubnetIn.Text = "Invalid IP: " + SubnetIn.Text;
         }
@@ -126,43 +136,9 @@ namespace XMLEditor
             if (IP.TryParse(DefaultGatewayIn.Text, out tmpIP))
             {
                 a.DefaultGateway = tmpIP;
+                parent.UpdateView();
             }
             else DefaultGatewayIn.Text = "Invalid IP: " + DefaultGatewayIn.Text;
-        }
-
-        private void NameIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void MacIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void ConnectedIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void OtherEndIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void LocalIPIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void SubnetIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void DefaultGatewayIn_LostFocus(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }

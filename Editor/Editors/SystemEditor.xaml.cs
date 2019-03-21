@@ -81,7 +81,7 @@ namespace XMLEditor
             Adapter a = (Adapter)Adapters.SelectedItem;
             if (a != null)
             {
-                AdapterEditor window = new AdapterEditor(a);
+                AdapterEditor window = new AdapterEditor(ref a, this);
                 window.Show();
                 window.Focus();
             }
