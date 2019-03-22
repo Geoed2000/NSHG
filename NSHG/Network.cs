@@ -91,24 +91,20 @@ namespace NSHG
                         }
                         catch
                         {
-                            
                             log("Reading System Failed");
                             break;
                         }
                         try
                         {
-                            
                             network.Systems.Add(sys.ID, sys);
-                            foreach(Adapter a in sys.Adapters)
+                            foreach(Adapter a in sys.Adapters.Values)
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
                             log("Added System \n    ID:" + sys.ID);
-                            
                         }
                         catch
                         {
-                            
                             log("failed adding system to network");
                         }
                         break;

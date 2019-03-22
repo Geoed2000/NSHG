@@ -82,7 +82,7 @@ namespace Simulation
                         Console.WriteLine("Enter filepath \n--> ");
                         string tmpfilepath = Console.ReadLine();
 
-                        network = Network.LoadNetwork(tmpfilepath);
+                        network = Network.LoadNetwork(tmpfilepath,Console.WriteLine);
                         networkloaded = true;
                         filepath = tmpfilepath;
 

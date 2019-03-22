@@ -69,7 +69,7 @@ namespace XMLEditor
                         return;
                 }
                 
-                network = Network.LoadNetwork(file);
+                network = Network.LoadNetwork(file,Console.WriteLine);
 
                 ReloadSystemPane();
                 Frame.Content = null;

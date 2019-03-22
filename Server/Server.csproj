@@ -100,5 +100,11 @@
       <Name>PCL</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="sys1.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

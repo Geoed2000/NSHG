@@ -28,13 +28,12 @@ namespace Server
         string filepath = "";
         Network network = new Network();
         bool networkloaded = false;
-        bool doTick;
         uint tick = 0;
 
 
         public MainWindow()
         {
-            doTick = false;
+            TickTimer.Elapsed += Tick;  
             InitializeComponent();
         }
 
@@ -42,12 +41,12 @@ namespace Server
         {
             tick += 1;
             Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
-            Log("Tick " + tick + " Started");
+            Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
             foreach (NSHG.System s in network.Systems.Values)
             {
-                s.Tick();
+                s.Tick(tick);
             }
-            Log("Tick " + tick + " Ended");
+            Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
         }
 
         private static void OnTimedEvent(Object source, ElapsedEventArgs e)
@@ -55,11 +54,14 @@ namespace Server
             
         }
 
-        private void Log(string log)
+        public void Log(string log)
         {
             SystemLog.Add(log);
-            LogBox.Text += log + "\n";
-            ScrollView.ScrollToBottom();
+            Dispatcher.BeginInvoke(new Action(delegate()
+            {
+                LogBox.Text += log + "\n";
+                ScrollView.ScrollToBottom();
+            }));
         }
 
         private void Command(string command)
@@ -82,14 +84,11 @@ namespace Server
                         networkloaded = true;
                         filepath = tmpfilepath;
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
-                        Log("no filepath given, or invalid filepath");
+                        Log(e.ToString());
                         break;
                     }
-
-                    
-
                     break;
                 case "save":
                     if (!networkloaded)
@@ -112,7 +111,19 @@ namespace Server
                     }
                     break;
                 case "start":
-                    Log("Started");
+                    if (!networkloaded)
+                    {
+                        Log("No network loded");
+                    }
+                    else
+                    {
+                        Log("Started");
+                        TickTimer.Enabled = true;
+                    }
+                    break;
+                case "stop":
+                    Log("Stoping");
+                    TickTimer.Enabled = false;
                     break;
                 case "help":
                     break;

@@ -336,7 +336,7 @@ namespace NSHG
         }
 
 
-        public void Tick()
+        public void Tick(uint tick)
         {
             if (SendQueue.Count != 0)
             {
@@ -349,11 +349,16 @@ namespace NSHG
         }
     }
 
+    public class RoutingTable
+    {
+
+    }
+
     public class System
     {
         public uint ID;
 
-        public List<Adapter> Adapters;
+        public Dictionary<MAC,Adapter> Adapters;
 
         public List<String> Log;
         
@@ -371,6 +376,7 @@ namespace NSHG
         protected System()
         {
             OnICMPPacket += handleICMPPacket;
+            OnTick += AdapterTick;
             
             Log = new List<string>();
 
@@ -383,11 +389,11 @@ namespace NSHG
         public System(uint ID):this()
         {
             this.ID = ID;
-            Adapters = new List<Adapter>();
+            Adapters = new Dictionary<MAC, Adapter>();
             respondToEcho = false;
         }
 
-        public System(uint ID, List<Adapter> Adapters = null, bool Respondtoecho = true):this()
+        public System(uint ID, Dictionary<MAC,Adapter> Adapters = null, bool Respondtoecho = true):this()
         {
             this.ID = ID;
             if (Adapters != null)
@@ -396,7 +402,7 @@ namespace NSHG
             }
             else
             {
-                Adapters = new List<Adapter>();
+                Adapters = new Dictionary<MAC, Adapter>();
             }
             this.respondToEcho = Respondtoecho;
         }
@@ -417,14 +423,14 @@ namespace NSHG
 
             if (!((ID == s.ID) && (respondToEcho == s.respondToEcho))) Equal = false;
 
-            foreach (Adapter a in Adapters)
+            foreach (Adapter a in Adapters.Values)
             {
-                if (!s.Adapters.Contains(a)) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
+                if (!(s.Adapters.ContainsValue(a))) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
                                                            //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
             }
-            foreach (Adapter a in s.Adapters)
+            foreach (Adapter a in s.Adapters.Values)
             {
-                if (!Adapters.Contains(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
+                if (!Adapters.ContainsValue(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
                                                           //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
             }
             return Equal;
@@ -433,7 +439,7 @@ namespace NSHG
         public static System FromXML(XmlNode Parent)
         {
             uint ID = 0;
-            List<Adapter> Adapters = new List<Adapter>();
+            Dictionary<MAC, Adapter> Adapters = new Dictionary<MAC, Adapter>();
             bool respondToEcho = true;
 
             foreach (XmlNode n in Parent.ChildNodes)
@@ -451,7 +457,8 @@ namespace NSHG
                     case "adapter":
                         try
                         {
-                            Adapters.Add(Adapter.FromXML(n));
+                            Adapter a = Adapter.FromXML(n);
+                            Adapters.Add(a.MyMACAddress,a);
                         }
                         catch
                         {
@@ -496,7 +503,7 @@ namespace NSHG
             RespondToEchoNode.InnerText = this.respondToEcho.ToString();
             parent.AppendChild(RespondToEchoNode);
 
-            foreach (Adapter a in Adapters)
+            foreach (Adapter a in Adapters.Values)
             {
                 parent.AppendChild(a.ToXML(doc));
             }
@@ -506,7 +513,7 @@ namespace NSHG
 
         public bool GetFreeAdapter(out Adapter a)
         {
-            foreach (Adapter adapt in Adapters)
+            foreach (Adapter adapt in Adapters.Values)
             {
                 if (!adapt.Connected)
                 {
@@ -526,7 +533,7 @@ namespace NSHG
         /// <returns> if an adapter was found</returns>
         public bool GetConnectedUnassociatedAdapter(out Adapter a, uint id)
         {
-            foreach (Adapter adapt in Adapters)
+            foreach (Adapter adapt in Adapters.Values)
             {
                 if (adapt.Connected == true && adapt.Associated == false)
                 {
@@ -625,16 +632,20 @@ namespace NSHG
 
         // AI
 
-        private event Action OnTick;
+        private event Action<uint> OnTick;
 
-        public void Tick()
+        public void Tick(uint tick )
         {
-            foreach (Adapter A in Adapters)
-            {
-                A.Tick();
-            }
             //Other AI Logic
-            OnTick.Invoke();
+            OnTick.Invoke(tick);
+        }
+
+        public void AdapterTick(uint tick)
+        {
+            foreach (Adapter A in Adapters.Values)
+            {
+                A.Tick(tick);
+            }
         }
     }
 
