@@ -1,4 +1,4 @@
-﻿using NSHG.Packet;
+﻿using NSHG.Headers;
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -351,6 +351,16 @@ namespace NSHG
 
     public class RoutingTable
     {
+        public struct Entry
+        {
+            IP Destination;
+            IP Netmask;
+            IP Gateway;
+            MAC Interface;
+            uint Metric;
+        }
+
+
 
     }
 
@@ -361,29 +371,22 @@ namespace NSHG
         public Dictionary<MAC,Adapter> Adapters;
 
         public List<String> Log;
-        
+
+        public bool respondToEcho;
+
+
+
         private event Action<Byte[],Adapter> OnRecievedPacket;
         private event Action<Byte[],Adapter> OnCorruptPacket; 
         private event Action<IPv4Header,Adapter> OnNotForMe;  
         private event Action<IPv4Header,Adapter> OnICMPPacket;
         
-
- 
-        public bool respondToEcho;
-
-        private UInt16 ICMPEchoreqSeq;
-
         protected System()
         {
             OnICMPPacket += handleICMPPacket;
             OnTick += AdapterTick;
             
             Log = new List<string>();
-
-            ICMPEchoreqSeq = 0;
-            ICMPEchoreqSeq = 0;
-            PacketIdentification = 0;
-            defaulttimetolive = 30;
         }
 
         public System(uint ID):this()
@@ -596,7 +599,7 @@ namespace NSHG
                     if (respondToEcho)
                     {
                         ICMPEchoRequestReply header = new ICMPEchoRequestReply(datagram.Datagram);
-                        ICMPEchoRequestReply icmp = new ICMPEchoRequestReply(0, header.Identifier, (UInt16)(header.Sequencenumber + 1));
+                        ICMPEchoRequestReply icmp = new ICMPEchoRequestReply(0, header.Identifier, (UInt16)(header.SequenceNumber + 1));
                         IPv4Header ipv4 = new IPv4Header(datagram.Identification, false, false, 255, IPv4Header.ProtocolType.ICMP, a.LocalIP, datagram.SourceAddress, null, icmp.ToBytes());
 
                         a.SendPacket(ipv4.ToBytes());
@@ -610,26 +613,8 @@ namespace NSHG
         protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
         
         // Application Layer
-        ushort PacketIdentification;
-        byte defaulttimetolive;
+        -
         
-        //public void ping(IP Recipient)
-        //{
-        //    Adapter a;
-        //    ICMPHeader icmp = new ICMPEchoRequestReply(8, 1, ICMPEchoreqSeq);
-        //    ICMPEcholistner.Add(ICMPEchoreqSeq, PingReponce);
-            
-        //    IPv4Header ipv4 = new IPv4Header(PacketIdentification++, false, false, defaulttimetolive, IPv4Header.ProtocolType.ICMP, a.LocalIP, Recipient, new byte[0], icmp.ToBytes());
-
-        //    Console.WriteLine("    " + ID.ToString() + " Pinging " + Recipient.ToString());
-        //    ICMPEchoreqSeq++;
-        //}
-
-        public void PingReponce(IPv4Header Header, ICMPEchoRequestReply iCMPHeader, Adapter adapter)
-        {
-            Console.WriteLine("    " + ID.ToString() + " Recieved Reply From " + Header.SourceAddress.ToString());
-        }
-
         // AI
 
         private event Action<uint> OnTick;
@@ -658,6 +643,63 @@ namespace NSHG
     //{
 
     //}
+
+
+
+    public abstract class Application
+    {
+        public abstract void OnTick(uint tick);
+    }
+
+    public class DHCPClient : Application
+    {
+        public class session
+        {
+            public enum State
+            {
+                INIT = 0,
+                SELECTING = 1,
+                REQUESTING = 2,
+                BOUND = 3,
+                RENEWING = 4,
+                REBINDING = 5,
+                INITREBOOT = 6,
+                REBOOTING = 7
+
+            }
+
+            private UInt32 xid;
+            private int T1;
+            private int T2;
+            Adapter a;
+            private State state;
+
+            public session(Adapter a)
+            {
+                this.a = a;
+                if (a.LocalIP != null)
+                    state = State.INIT;
+                else state = State.INITREBOOT;
+                xid = (UInt32)new Random().Next();
+
+            }
+
+            public void OnTick(uint tick)
+            {
+                switch (state)
+                {
+                    case State.INIT:
+
+                        break;
+                }
+            }
+        }
+
+        public override void OnTick(uint tick)
+        {
+
+        }
+    }
 
 
 }

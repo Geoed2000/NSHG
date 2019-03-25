@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 using NSHG;
-using NSHG.Packet;
+using NSHG.Headers;
 
 namespace XUnitTests
 {
