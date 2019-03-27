@@ -128,6 +128,12 @@ namespace NSHG
             Mac = MACAddress;
         }
 
+        public MAC(Byte[] Array, int StartIndex)
+        {
+            ArraySegment<Byte> MACAddress = new ArraySegment<byte>(Array, StartIndex, 6);
+            Mac = MACAddress.Array;
+        }
+
         public static MAC Parse(String MACAddress)
         {
             //Get rid of trailing and leading white space

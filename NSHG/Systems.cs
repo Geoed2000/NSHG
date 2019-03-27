@@ -1,7 +1,8 @@
-﻿using NSHG.Headers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Xml;
+using NSHG.Protocols.IPv4;
+using NSHG.Protocols.ICMP;
 namespace NSHG
 {
     public class Adapter
@@ -12,6 +13,7 @@ namespace NSHG
         public IP LocalIP;
         public IP SubnetMask;
         public IP DefaultGateway;
+        public IP DNS;
         public Adapter OtherEnd;
         public uint OtherendID;
         private bool _Connected;
@@ -66,7 +68,7 @@ namespace NSHG
  
         public event Action<byte[],Adapter> OnRecievedPacket;
 
-        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, uint OtherendID = 0, bool Connected = false)
+        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false)
         {
             SendLock = new object();
             RecieveLock = new object();
@@ -81,6 +83,7 @@ namespace NSHG
                 this.LocalIP = LocalIP;
                 this.SubnetMask = SubnetMask;
                 this.DefaultGateway = DefaultGateway;
+                this.DNS = DNS;
                 this.OtherendID = OtherendID;
                 _Connected = true;
             }
@@ -99,6 +102,7 @@ namespace NSHG
             IP LocalIP = null;
             IP SubnetMask = null;
             IP DefaultGateway = null;
+            IP DNS = null;
             uint OtherEndid = 0;
             bool Connected = false;
 
@@ -170,6 +174,18 @@ namespace NSHG
                             Console.ForegroundColor = ConsoleColor.White;
                         }
                         break;
+                    case "dns":
+                        try
+                        {
+                            DNS = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read DNS, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
                     case "connectedsystem":
                     case "otherend":
                         try
@@ -202,7 +218,7 @@ namespace NSHG
                 throw new ArgumentException("MacAddress or SYSID not provided");
             }
 
-            Adapter a = new Adapter(MacAddress, sysID, Name, LocalIP, SubnetMask, DefaultGateway, OtherEndid, Connected);
+            Adapter a = new Adapter(MacAddress, sysID, Name, LocalIP, SubnetMask, DefaultGateway, DNS, OtherEndid, Connected);
             return a;
         }
 
@@ -233,6 +249,10 @@ namespace NSHG
             XmlNode DefaultGatewayNode = doc.CreateElement("DefaultGateway");
             DefaultGatewayNode.InnerText = this.DefaultGateway.ToString();
             parent.AppendChild(DefaultGatewayNode);
+
+            XmlNode DNSNode = doc.CreateElement("DNS");
+            DNSNode.InnerText = this.DNS.ToString();
+            parent.AppendChild(DNSNode);
 
             XmlNode OtherEndNode = doc.CreateElement("ConnectedSystem");
             OtherEndNode.InnerText = this.OtherendID.ToString();
@@ -269,6 +289,7 @@ namespace NSHG
             LocalIP = null;
             SubnetMask = null;
             DefaultGateway = null;
+            DNS = null;
             OtherEnd = null;
         }
 
@@ -301,17 +322,19 @@ namespace NSHG
                 if (a.SubnetMask != null) return false;
             }
             else if (!SubnetMask.Equals(a.SubnetMask)) return false;
-
+            
             if (DefaultGateway == null)
             {
                 if (a.DefaultGateway != null) return false;
             }
             else if (!DefaultGateway.Equals(a.DefaultGateway)) return false;
 
-
-
-
-
+            if (DNS == null)
+            {
+                if (a.DNS != null) return false;
+            }
+            else if (!DNS.Equals(a.DNS)) return false;
+            
 
             if ((Name == a.Name)&&(OtherendID == a.OtherendID)&&(Connected == a.Connected)&&(Associated == a.Associated))
             {
@@ -611,6 +634,10 @@ namespace NSHG
         // Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
         // Used to pass from network to Application layer
         protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
+
+        protected Dictionary<UInt16, Action<IPv4Header,Protocols.UDP.UDPHeader, Adapter>> UDPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.UDP.UDPHeader, Adapter>>();
+                                                                                                                        
+        protected Dictionary<UInt16, Action<IPv4Header,Protocols.TCP.TCPHeader, Adapter>> TCPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.TCP.TCPHeader, Adapter>>();
         
         // Application Layer
         
@@ -643,118 +670,4 @@ namespace NSHG
     //{
 
     //}
-
-
-
-    public abstract class Application
-    {
-        public abstract void OnTick(uint tick);
-    }
-
-    public class DHCPClient : Application
-    {
-        public class session
-        {
-            public enum State
-            {
-                INIT = 0,
-                SELECTING = 1,
-                REQUESTING = 2,
-                BOUND = 3,
-                RENEWING = 4,
-                REBINDING = 5,
-                INITREBOOT = 6,
-                REBOOTING = 7
-
-            }
-
-
-            private UInt32 xid;
-            private int T1;
-            private int T2;
-            Adapter a;
-            private State state;
-            
-            private Protocols.DHCPDatagram Offer;
-
-            private Protocols.DHCPDatagram RequestResponce;
-
-            private IP offeredIP;
-
-            public session(Adapter a)
-            {
-                this.a = a;
-                if (a.LocalIP != null)
-                    state = State.INIT;
-                else state = State.INITREBOOT;
-                xid = (UInt32)new Random().Next();
-
-            }
-
-            public void OnTick(uint tick)
-            {
-                switch (state)
-                {
-                    case State.INIT:
-                        Protocols.DHCPDatagram DHCP = new Protocols.DHCPDatagram(0, xid);
-                        UDPHeader UDP = new UDPHeader(68,67,DHCP.ToBytes());
-                        IPv4Header IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero,IP.Broadcast,UDP.ToBytes(),32);
-                        state = State.SELECTING;
-                        break;
-                    case State.SELECTING:
-                        if (Offer != null)
-                        {
-                            if (Offer.yiaddr != null)
-                            {
-                                offeredIP = Offer.yiaddr;
-                                DHCP = new Protocols.DHCPDatagram(0, xid);
-                                UDP = new UDPHeader(68, 67, DHCP.ToBytes());
-                                IP server = IP.Broadcast;
-                                if (Offer.siaddr != null) server = Offer.siaddr;
-                                IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero, server, UDP.ToBytes(), 32);
-                                state = State.REQUESTING;
-                            }
-                        }
-                        break;
-                    case State.REQUESTING:
-                        if (RequestResponce != null)
-                        {
-                            if (RequestResponce.)
-                            {
-                                 
-                            }
-                            else
-                            {
-                                Offer = null;
-                                state = State.INIT;
-                            }
-                            
-                        }
-                        break;
-                    case State.BOUND:
-
-                        break;
-                    case State.RENEWING:
-
-                        break;
-                    case State.REBINDING:
-
-                        break;
-                    case State.INITREBOOT:
-
-                        break;
-                    case State.REBOOTING:
-
-                        break;
-                }
-            }
-        }
-
-        public override void OnTick(uint tick)
-        {
-
-        }
-    }
-
-
 }

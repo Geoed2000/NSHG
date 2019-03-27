@@ -14,6 +14,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Timers;
 using NSHG;
+using NSHG.Protocols.IPv4;
+
 
 namespace Server
 {
