@@ -294,7 +294,8 @@ namespace NSHG
             public enum ProtocolType : byte
             {
                 ICMP = 1,
-                TCP = 6
+                TCP = 6,
+                UDP = 17
 
             }
 
@@ -467,11 +468,15 @@ namespace NSHG
                 }
             }
 
-            public static IPv4Header DefaultTCPWrapper(IP Source, IP Destination, byte[] Datagram)
+            public static IPv4Header DefaultTCPWrapper(IP Source, IP Destination, byte[] Datagram, byte TTL = 255)
             {
-                return new IPv4Header(0, false, false, 255, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
+                return new IPv4Header(0, false, false, TTL, ProtocolType.TCP, Source, Destination, new byte[0], Datagram);
             }
 
+            public static IPv4Header DefaultUDPWrapper(IP Source, IP Destination, byte[] Datagram, byte TTL = 255)
+            {
+                return new IPv4Header(0, false, false, TTL, ProtocolType.UDP, Source, Destination, new byte[0], Datagram);
+            }
             // Method(s)
 
             private List<byte> _ToBytesNoChecksumNoDatagram()

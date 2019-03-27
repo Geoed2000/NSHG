@@ -613,7 +613,7 @@ namespace NSHG
         protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
         
         // Application Layer
-        -
+        
         
         // AI
 
@@ -668,11 +668,18 @@ namespace NSHG
 
             }
 
+
             private UInt32 xid;
             private int T1;
             private int T2;
             Adapter a;
             private State state;
+            
+            private Protocols.DHCPDatagram Offer;
+
+            private Protocols.DHCPDatagram RequestResponce;
+
+            private IP offeredIP;
 
             public session(Adapter a)
             {
@@ -689,6 +696,54 @@ namespace NSHG
                 switch (state)
                 {
                     case State.INIT:
+                        Protocols.DHCPDatagram DHCP = new Protocols.DHCPDatagram(0, xid);
+                        UDPHeader UDP = new UDPHeader(68,67,DHCP.ToBytes());
+                        IPv4Header IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero,IP.Broadcast,UDP.ToBytes(),32);
+                        state = State.SELECTING;
+                        break;
+                    case State.SELECTING:
+                        if (Offer != null)
+                        {
+                            if (Offer.yiaddr != null)
+                            {
+                                offeredIP = Offer.yiaddr;
+                                DHCP = new Protocols.DHCPDatagram(0, xid);
+                                UDP = new UDPHeader(68, 67, DHCP.ToBytes());
+                                IP server = IP.Broadcast;
+                                if (Offer.siaddr != null) server = Offer.siaddr;
+                                IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero, server, UDP.ToBytes(), 32);
+                                state = State.REQUESTING;
+                            }
+                        }
+                        break;
+                    case State.REQUESTING:
+                        if (RequestResponce != null)
+                        {
+                            if (RequestResponce.)
+                            {
+                                 
+                            }
+                            else
+                            {
+                                Offer = null;
+                                state = State.INIT;
+                            }
+                            
+                        }
+                        break;
+                    case State.BOUND:
+
+                        break;
+                    case State.RENEWING:
+
+                        break;
+                    case State.REBINDING:
+
+                        break;
+                    case State.INITREBOOT:
+
+                        break;
+                    case State.REBOOTING:
 
                         break;
                 }

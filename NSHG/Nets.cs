@@ -8,6 +8,9 @@ namespace NSHG
     {
         public static IP Loopback = new IP(new byte[4] { 127, 0, 0, 1});
 
+        public static IP Zero = new IP(new byte[4] { 0, 0, 0, 0 });
+        public static IP Broadcast = new IP(new byte[4] {255,255,255,255});
+
         // 0.0.0.0 to 255.255.255.255
         private Byte[] Ip = new Byte[4];
         
