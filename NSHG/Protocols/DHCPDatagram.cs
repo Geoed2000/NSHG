@@ -184,6 +184,7 @@ namespace NSHG.Protocols.DHCP
                 //tag, length N + 2, N byte(s) data
                 case 3:
                 case 6:
+                case 55:
                 default:
                     b[0] = (byte)tag;
                     b[1] = len;

@@ -101,6 +101,28 @@ namespace NSHG
 
             return true;
         }
+
+        public static IP operator &(IP ip1, IP ip2)
+        {
+            byte[] bytes = new byte[4];
+            for (int i = 0; i < 4; i++)
+            {
+                bytes[i] = (byte)(ip1.Ip[i] & ip2.Ip[i]);
+            }
+            return new IP(bytes);
+        }
+        public static bool operator ==(IP ip1, IP ip2)
+        {
+            if (ip1 == null)
+                if (ip2 == null) return true;
+                else return false;
+            else return ip1.Equals(ip2);
+        }
+        public static bool operator !=(IP ip1, IP ip2)
+        {
+            return !(ip1 == ip2);
+        }
+
         public Byte[] ToBytes()
         {
             return Ip;

@@ -9,6 +9,9 @@ namespace NSHG.Applications
 {
     public class DHCPClient : Application
     {
+        public List<string> Log = new List<string>();
+
+        RoutingTable RTable;
         public class session
         {
             public enum State
@@ -358,13 +361,13 @@ namespace NSHG.Applications
         SortedList<uint,session> sessions = new SortedList<uint,session>();
         
         
-        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, Adapter>> UDPListner, List<Adapter> adapters)
+        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, Adapter>> UDPListner, List<Adapter> adapters, RoutingTable Rtable)
         {
             UDPListner.Add(68, packet);
             foreach (Adapter a in adapters)
             {
                 session s = new session(a);
-                sessions.Add(s.xid, s);
+                session s.Add(s.xid, s);
             }
         }
 
@@ -391,8 +394,122 @@ namespace NSHG.Applications
         }
     }
 
-    public class DHCPServer
+    public class DHCPServer : Application
     {
+        public List<string> Log = new List<string>();
+
+        public class Lease
+        {
+            public IP ciaddr;
+            public MAC chaddr;
+            public uint LeaseStartTick;
+            public uint LeaseLength;
+            public uint LeaseEndTick
+            {
+                get
+                {
+                    return LeaseStartTick + LeaseLength;
+
+                }
+            }
+
+            public Lease(IP ClientIP, MAC ClientHardwareAddress, uint LeaseStartTick, uint LeaseLength)
+            {
+                ciaddr = ClientIP;
+                chaddr = ClientHardwareAddress;
+                this.LeaseStartTick = LeaseStartTick;
+                this.LeaseLength = LeaseLength;
+            }
+        }
+
+        public SortedList<IP, Lease> Leases = new SortedList<IP, Lease>();
+
+        public SortedList<IP, Lease> Reserved = new SortedList<IP, Lease>();
+
+        public Queue<IP> Open = new Queue<IP>();
+
+        IP RouterIP;
+        IP ThisIP;
+        IP SubnetMask;
+        IP DNS = new IP(new byte[4] { 1, 1, 1, 1 });
+
+        public void packet(IPv4Header ipv4, UDPHeader udp, Adapter a)
+        {
+            try
+            {
+                DHCPDatagram dHCP = new DHCPDatagram(udp.Datagram);
+                DHCPDatagram newdHCP = new DHCPDatagram(2, dHCP.xid, ClientMAC: dHCP.chaddr);
+                Optionlist ol = new Optionlist();
+                   
+                foreach (DHCPOption o in dHCP.options)
+                {
+                    switch (o.tag)
+                    {
+                        case Tag.paramaterList:
+                            foreach(byte b in o.data)
+                            {
+                                switch ((Tag)b)
+                                {
+                                    case Tag.dhcpServerID:
+                                        ol.Add(new DHCPOption(Tag.dhcpServerID, a.LocalIP.ToBytes()));
+                                        break;
+                                    case Tag.router:
+                                        ol.Add(new DHCPOption(Tag.router, RouterIP.ToBytes()));
+                                        break;
+                                    case Tag.subnetmask:
+                                        ol.Add(new DHCPOption(Tag.subnetmask, SubnetMask.ToBytes()));
+                                        break;
+                                    case Tag.domainserver:
+                                        ol.Add(new DHCPOption(Tag.domainserver, DNS.ToBytes()));
+                                        break;
+                                }
+                            }
+                            break;
+                        case Tag.dhcpMsgType:
+                            switch ((DHCPOption.MsgType)o.data[0])
+                            {
+                                case DHCPOption.MsgType.DHCPDISCOVER:
+                                    newdHCP.yiaddr = Open.Dequeue();
+                                    ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPOFFER }));
+                                    break;
+                                case DHCPOption.MsgType.DHCPREQUEST:
+                                    IP Request = new IP(dHCP.options.Find(match => match.tag == Tag.addressRequest).data,0);
+                                    if (!Leases.ContainsKey(Request))
+                                    {
+                                        if (Reserved.ContainsKey(Request))
+                                        {
+                                            if (!(Reserved[Request].chaddr == dHCP.chaddr))
+                                            {
+                                                ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPNAK}));
+                                                break;
+                                            }
+                                        }
+                                        ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK}));
+                                    }
+                                    ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
+                                    break;
+
+                            }
+                            break;
+                    }
+                }
+                newdHCP.options = ol;
+                UDPHeader newupd = new UDPHeader(67, 68, newdHCP.ToBytes());
+                IPv4Header newipv4 = IPv4Header.DefaultUDPWrapper(a.LocalIP, IP.Broadcast, newupd.ToBytes(), 32); 
+                a.SendPacket(newipv4.ToBytes());
+            }
+            catch
+            {
+
+            }
+        }
+
+        public override void OnTick(uint tick)
+        {
+
+        }
+
+        
 
     }
 }

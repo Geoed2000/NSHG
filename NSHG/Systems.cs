@@ -1,8 +1,9 @@
-﻿using System;
+﻿ using System;
 using System.Collections.Generic;
 using System.Xml;
 using NSHG.Protocols.IPv4;
 using NSHG.Protocols.ICMP;
+using NSHG.Applications;
 namespace NSHG
 {
     public class Adapter
@@ -376,14 +377,40 @@ namespace NSHG
     {
         public struct Entry
         {
-            IP Destination;
-            IP Netmask;
-            IP Gateway;
-            MAC Interface;
-            uint Metric;
+            public IP Destination;
+            public IP Netmask;
+            public IP Gateway;
+            public MAC Interface;
+            public uint Metric;
         }
 
+        public SortedList<uint,Entry> Entries;
+        System s;
+        
+        public RoutingTable(System s)
+        {
+            Entries = new SortedList<uint, Entry>();
 
+        }
+
+        public void NewEntry(Entry e)
+        {
+            Entries.Add(e.Metric, e);
+        }
+
+        public void Route(IPv4Header datagram)
+        {
+            List<Entry> entries = (List<Entry>)Entries.Values;
+
+            for(int i = entries.Count-1; i < 0; i--)
+            {
+                Entry e = entries[i];
+                if ((e.Destination & e.Netmask) == (datagram.DestinationAddress & e.Netmask))
+                    if (s.SendPacket(e.Interface, datagram))
+                        return;
+                    
+            }
+        }
 
     }
 
@@ -393,11 +420,12 @@ namespace NSHG
 
         public Dictionary<MAC,Adapter> Adapters;
 
+        public RoutingTable RoutingTable;
+
         public List<String> Log;
 
         public bool respondToEcho;
-
-
+        
 
         private event Action<Byte[],Adapter> OnRecievedPacket;
         private event Action<Byte[],Adapter> OnCorruptPacket; 
@@ -408,6 +436,8 @@ namespace NSHG
         {
             OnICMPPacket += handleICMPPacket;
             OnTick += AdapterTick;
+
+            RoutingTable = new RoutingTable(this);
             
             Log = new List<string>();
         }
@@ -572,13 +602,14 @@ namespace NSHG
         }
 
         // Network Layer
+
+
         // Packet Handeling
         public void Packet(byte[] datagram, Adapter a)
         {
             OnRecievedPacket.BeginInvoke(datagram, a, null, null);
             IPv4Header Data;
             try
-
             {
                 Data = new IPv4Header(datagram);
             }
@@ -602,6 +633,19 @@ namespace NSHG
             else
             {
                 OnNotForMe.BeginInvoke(Data, a, null, null);
+            }
+        }
+
+        public bool SendPacket(MAC adapter, IPv4Header data)
+        {
+            if (Adapters.ContainsKey(adapter))
+            {
+                Adapters[adapter].SendPacket(data.ToBytes());
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -638,10 +682,14 @@ namespace NSHG
         protected Dictionary<UInt16, Action<IPv4Header,Protocols.UDP.UDPHeader, Adapter>> UDPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.UDP.UDPHeader, Adapter>>();
                                                                                                                         
         protected Dictionary<UInt16, Action<IPv4Header,Protocols.TCP.TCPHeader, Adapter>> TCPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.TCP.TCPHeader, Adapter>>();
-        
+
         // Application Layer
-        
-        
+        List<Application> Apps = new List<Application>();
+
+        public void AppsInit()
+        {
+            Apps.Add(new DHCPClient(ref UDPListner, new List<Adapter>(Adapters.Values), ));
+        } 
         // AI
 
         private event Action<uint> OnTick;

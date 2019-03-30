@@ -58,53 +58,24 @@ namespace Simulation
     
         static void Main(string[] args)
         {
-            string filepath = "";
-            Network network = new Network();
-            bool networkloaded = false;
+            NSHG.System s = new NSHG.System(1);
 
-            string input = Console.ReadLine();
-            if (input == "test")
+            MAC m = MAC.Random();
+            s.Adapters.Add(m,new Adapter(m, s.ID));
+            
+            RoutingTable r = new RoutingTable(s);
+
+            r.NewEntry(new RoutingTable.Entry() { Metric = 1 });
+            r.NewEntry(new RoutingTable.Entry() { Metric = 2 });
+            r.NewEntry(new RoutingTable.Entry() { Metric = 4 });
+            r.NewEntry(new RoutingTable.Entry() { Metric = 3 });
+
+            foreach (RoutingTable.Entry e in r.Entries.Values)
             {
-                filepath = "sys1.xml";
-                network = Network.LoadNetwork(filepath, Console.WriteLine);
-                networkloaded = true;
-                Console.WriteLine(network.Systems[1].ID);
-                Console.ReadLine();
+                Console.WriteLine(e.Metric.ToString());
             }
+            Console.ReadKey();
 
-            do
-            {
-                Console.Write("--> ");
-                input = Console.ReadLine();
-                switch (input)
-                {
-                    case "load":
-                        Console.WriteLine("Enter filepath \n--> ");
-                        string tmpfilepath = Console.ReadLine();
-
-                        network = Network.LoadNetwork(tmpfilepath,Console.WriteLine);
-                        networkloaded = true;
-                        filepath = tmpfilepath;
-
-                        break;
-                    case "save":
-                        if (!networkloaded)
-                        {
-                            Console.WriteLine("No network loded");
-                        }
-                        else
-                        {
-                            Console.Write("Please enter save filepath: ");
-                            string savepath = Console.ReadLine();
-                            if (network.SaveNetwork(savepath)) Console.WriteLine("Save successfull");
-                            else Console.WriteLine("Save unsuccessfull");
-                        }
-                        break;
-                    case "start":
-                    case "help":
-                        break;
-                }
-            } while (input != "exit");
         }
     }
 }
