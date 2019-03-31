@@ -385,28 +385,67 @@ namespace NSHG
         }
 
         public SortedList<uint,Entry> Entries;
-        System s;
+        public SortedList<uint,Entry> StaticEntries;
+        System sys;
         
         public RoutingTable(System s)
         {
             Entries = new SortedList<uint, Entry>();
-
+            
         }
 
-        public void NewEntry(Entry e)
+        private void GenerateTable()
         {
-            Entries.Add(e.Metric, e);
+            foreach (Adapter a in sys.Adapters.Values)
+            {
+                if (a.Connected)
+                {
+                    Entries.Add(50, new Entry 
+                    {
+                        Destination = a.LocalIP | a.SubnetMask,
+                        Netmask = a.SubnetMask,
+                        Gateway = null,
+                        Interface = a.MyMACAddress,
+                        Metric = 50
+                    });
+                    Entries.Add(225, new Entry
+                    {
+                        Destination = a.LocalIP,
+                        Netmask = IP.Broadcast,
+                        Gateway = null,
+                        Interface = a.MyMACAddress,
+                        Metric = 225
+                    });
+                    if (a.DefaultGateway != null)
+                    {
+                        Entries.Add(1, new Entry
+                        {
+                            Destination = IP.Zero,
+                            Netmask = IP.Zero,
+                            Gateway = a.DefaultGateway,
+                            Interface = a.MyMACAddress,
+                            Metric = 1
+                        });
+                    }
+                }
+            }
+        }
+
+        public void NewStaticEntry(Entry e)
+        {
+            StaticEntries.Add(e.Metric, e);
         }
 
         public void Route(IPv4Header datagram)
         {
             List<Entry> entries = (List<Entry>)Entries.Values;
+            
 
             for(int i = entries.Count-1; i < 0; i--)
             {
                 Entry e = entries[i];
                 if ((e.Destination & e.Netmask) == (datagram.DestinationAddress & e.Netmask))
-                    if (s.SendPacket(e.Interface, datagram))
+                    if (sys.SendPacket(e.Interface, datagram))
                         return;
                     
             }
@@ -688,7 +727,7 @@ namespace NSHG
 
         public void AppsInit()
         {
-            Apps.Add(new DHCPClient(ref UDPListner, new List<Adapter>(Adapters.Values), ));
+            Apps.Add(new DHCPClient(ref UDPListner, new List<Adapter>(Adapters.Values)));
         } 
         // AI
 

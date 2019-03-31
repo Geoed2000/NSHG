@@ -10,8 +10,7 @@ namespace NSHG.Applications
     public class DHCPClient : Application
     {
         public List<string> Log = new List<string>();
-
-        RoutingTable RTable;
+        
         public class session
         {
             public enum State
@@ -361,13 +360,13 @@ namespace NSHG.Applications
         SortedList<uint,session> sessions = new SortedList<uint,session>();
         
         
-        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, Adapter>> UDPListner, List<Adapter> adapters, RoutingTable Rtable)
+        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, Adapter>> UDPListner, List<Adapter> adapters)
         {
             UDPListner.Add(68, packet);
             foreach (Adapter a in adapters)
             {
                 session s = new session(a);
-                session s.Add(s.xid, s);
+                sessions.Add(s.xid, s);
             }
         }
 
@@ -508,8 +507,5 @@ namespace NSHG.Applications
         {
 
         }
-
-        
-
     }
 }
