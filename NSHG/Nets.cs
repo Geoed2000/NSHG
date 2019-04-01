@@ -145,6 +145,10 @@ namespace NSHG
         {
             return !(ip1 == ip2);
         }
+        public static IP operator ++(IP ip1)
+        {
+            return new IP(BitConverter.GetBytes((BitConverter.ToInt32(ip1.Ip,0)+1)));
+        }
 
         public Byte[] ToBytes()
         {

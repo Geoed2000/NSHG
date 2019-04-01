@@ -111,7 +111,7 @@ namespace XMLEditor
                     return;
             }
 
-            network.SaveNetwork(file);
+            network.SaveNetwork(file, null);
             saved = true;
         }
 
@@ -122,7 +122,7 @@ namespace XMLEditor
                 return;
             }
 
-            network.SaveNetwork(file);
+            network.SaveNetwork(file, null);
             saved = true;
         }
 

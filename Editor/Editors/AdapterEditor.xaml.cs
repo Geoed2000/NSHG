@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using NSHG;
+using NSHG.NetworkInterfaces;
 
 namespace XMLEditor
 {

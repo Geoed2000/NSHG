@@ -3,6 +3,7 @@ using Xunit;
 using NSHG;
 using System.Xml;
 using System.Collections.Generic;
+using NSHG.NetworkInterfaces;
 
 namespace XUnitTests
 {
@@ -20,8 +21,8 @@ namespace XUnitTests
                 IP DefaultG = IP.Parse("192.168.1.1");
                 IP DNS = IP.Parse("1.1.1.1");
 
-                NSHG.Adapter a = new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, DNS, 1, true);
-                NSHG.Adapter a2 = null;
+                Adapter a = new Adapter(mac, 1, name, localip, Subnet, DefaultG, DNS, 1, true);
+                Adapter a2 = null;
                 XmlDocument doc = new XmlDocument();
                 doc.Load("XMLFile.xml");
                 
@@ -33,7 +34,7 @@ namespace XUnitTests
                         {
                             if (n.Name == "Adapter")
                             {
-                                a2 = NSHG.Adapter.FromXML(n);
+                                a2 = Adapter.FromXML(n);
                             }
                         }
                     }
@@ -60,7 +61,7 @@ namespace XUnitTests
                 IP DefaultG = IP.Parse("192.168.1.1");
                 IP DNS = IP.Parse("1.1.1.1");
 
-                a.Add(mac, new NSHG.Adapter(mac, 1, name, localip, Subnet, DefaultG, DNS, 1, true));
+                a.Add(mac, new Adapter(mac, 1, name, localip, Subnet, DefaultG, DNS, 1, true));
 
                 s1 = new NSHG.System(1, a, false);
 
@@ -84,7 +85,7 @@ namespace XUnitTests
 
                 Network net = Network.NewNet();
                 net.Systems.Add(s1.ID, s1);
-                net.SaveNetwork("sys1.xml");
+                net.SaveNetwork("sys1.xml", null);
 
 
                 Assert.True(s1.Equals(s2));

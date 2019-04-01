@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NSHG.NetworkInterfaces;
 
 namespace NSHG.Applications
 {
@@ -64,36 +65,44 @@ namespace NSHG.Applications
 
         private void GenerateTable()
         {
-            foreach (Adapter a in sys.NetworkInterfaces.Values)
+            foreach (NetworkInterface ni in sys.NetworkInterfaces.Values)
             {
-                if (a.Connected)
+                if (ni.Connected)
                 {
                     Entries.Add(50, new Entry
                     {
-                        Destination = a.LocalIP | a.SubnetMask,
-                        Netmask = a.SubnetMask,
+                        Destination = ni.LocalIP | ni.SubnetMask,
+                        Netmask = ni.SubnetMask,
                         Gateway = null,
-                        Interface = a.MyMACAddress,
+                        Interface = ni.MyMACAddress,
                         Metric = 50
                     });
                     Entries.Add(225, new Entry
                     {
-                        Destination = a.LocalIP,
+                        Destination = ni.LocalIP,
                         Netmask = IP.Broadcast,
                         Gateway = null,
-                        Interface = a.MyMACAddress,
+                        Interface = ni.MyMACAddress,
                         Metric = 225
                     });
-                    if (a.DefaultGateway != null)
+                    try
                     {
-                        Entries.Add(1, new Entry
+                        Adapter a = (Adapter)ni;
+                        if (a.DefaultGateway != null)
                         {
-                            Destination = IP.Zero,
-                            Netmask = IP.Zero,
-                            Gateway = a.DefaultGateway,
-                            Interface = a.MyMACAddress,
-                            Metric = 1
-                        });
+                            Entries.Add(1, new Entry
+                            {
+                                Destination = IP.Zero,
+                                Netmask = IP.Zero,
+                                Gateway = a.DefaultGateway,
+                                Interface = a.MyMACAddress,
+                                Metric = 1
+                            });
+                        }
+                    }
+                    catch (InvalidCastException)
+                    {
+
                     }
                 }
             }

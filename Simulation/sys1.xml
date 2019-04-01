@@ -30,30 +30,23 @@
     </Adapter>
    </System>
   
-  <System>
+  <Router>
     <ID>3</ID>
     <RespondToEcho>True</RespondToEcho>
-    <Adapter>
+    <GroupAdapter>
       <name>Adapter 1</name>
       <sysid>3</sysid>
       <mac>ff:ff:ff:ff:ff:fd</mac>
       <localip>192.168.1.1</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
-      <connectedsystem>1</connectedsystem>
+      <connectedsystems>
+        <ID>1</ID>
+        <ID>2</ID>
+      </connectedsystems>
       <connected>True</connected>
-    </Adapter>
-    <Adapter>
-      <name>Adapter 2</name>
-      <sysid>3</sysid>
-      <mac>ff:ff:ff:ff:ff:fc</mac>
-      <localip>192.168.1.1</localip>
-      <subnetmask>255.255.255.0</subnetmask>
-      <defaultgateway>192.168.1.1</defaultgateway>
-      <connectedsystem>2</connectedsystem>
-      <connected>True</connected>
-    </Adapter>
-   </System>
+    </GroupAdapter>
+   </Router>
   
   <Connection>
     <ID>1</ID>

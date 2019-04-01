@@ -24,7 +24,7 @@ namespace Server
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Timer TickTimer = new Timer(1000);
+        private Timer TickTimer = new Timer(200);
         public List<string> CommandLog = new List<string>();
         public List<string> SystemLog = new List<string>();
         string filepath = "";
@@ -102,7 +102,7 @@ namespace Server
                         try
                         {
                             tmpfilepath = commandlist[1];
-                            if (network.SaveNetwork(tmpfilepath)) Console.WriteLine("Save successfull");
+                            if (network.SaveNetwork(tmpfilepath, Log)) Console.WriteLine("Save successfull");
                             else Console.WriteLine("Save unsuccessfull");
                         }
                         catch (Exception)

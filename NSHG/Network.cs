@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
+using NSHG.NetworkInterfaces;
 
 namespace NSHG
 {
@@ -14,7 +15,9 @@ namespace NSHG
         public List<uint> UnallocatedPlayers;
         public List<MAC> TakenMacAddresses;
 
-        public static Network NewNet()
+        public Action<string> log;
+
+        public static Network NewNet(Action<string> log = null)
         {
             Network n = new Network();
             n.Systems = new Dictionary<uint, System>();
@@ -23,6 +26,10 @@ namespace NSHG
             n.OfflinePlayers = new List<uint>();
             n.UnallocatedPlayers = new List<uint>();
             n.TakenMacAddresses = new List<MAC>();
+
+            if (log == null) log = Console.WriteLine;
+            n.log = log;
+
             return n;
         }
 
@@ -69,22 +76,23 @@ namespace NSHG
             return Connect(sys1, sys2);
         }
 
-        public static Network LoadNetwork(string filepath, Action<String> log)
+        public static Network LoadNetwork(string filepath, Action<String> log = null)
         {
-            Network network = NewNet();
+            Network network = NewNet(log);
+            
             
             XmlDocument doc = new XmlDocument();
             doc.Load(filepath);
             foreach (XmlNode node in doc.DocumentElement)
             {
-                string s = node.Name;
+                string s = node.Name.ToLower();
 
                 
                 NSHG.System sys;
 
                 switch (s)
                 {
-                    case "System":
+                    case "system":
                         try
                         {
                             sys = NSHG.System.FromXML(node);
@@ -108,11 +116,59 @@ namespace NSHG
                             log("failed adding system to network");
                         }
                         break;
+                    case "router":
+                        try
+                        {
+                            sys = NSHG.Router.FromXML(node);
+                        }
+                        catch
+                        {
+                            log("Reading System Failed");
+                            break;
+                        }
+                        try
+                        {
+                            network.Systems.Add(sys.ID, sys);
+                            foreach (NetworkInterface a in sys.NetworkInterfaces.Values)
+                            {
+                                network.TakenMacAddresses.Add(a.MyMACAddress);
+                            }
+                            log("Added System \n    ID:" + sys.ID);
+                        }
+                        catch
+                        {
+                            log("failed adding Router to network");
+                        }
+                        break;
+                    case "pc":
+                        try
+                        {
+                            sys = NSHG.System.FromXML(node);
+                        }
+                        catch
+                        {
+                            log("Reading System Failed");
+                            break;
+                        }
+                        try
+                        {
+                            network.Systems.Add(sys.ID, sys);
+                            foreach (NetworkInterface a in sys.NetworkInterfaces.Values)
+                            {
+                                network.TakenMacAddresses.Add(a.MyMACAddress);
+                            }
+                            log("Added System \n    ID:" + sys.ID);
+                        }
+                        catch
+                        {
+                            log("failed adding system to network");
+                        }
+                        break;
 
-                    case "Player":
+                    case "player":
 
                         break;
-                    case "Connection":
+                    case "connection":
                         if (network.Connect(node))
                         {
                             //success
@@ -132,7 +188,7 @@ namespace NSHG
             }
             return network;
         }
-        public bool SaveNetwork(string filepath)
+        public bool SaveNetwork(string filepath, Action<String> log)
         {
             try
             {

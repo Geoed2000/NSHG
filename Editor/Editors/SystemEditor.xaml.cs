@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using NSHG;
+using NSHG.NetworkInterfaces;
 
 namespace XMLEditor
 {
@@ -78,10 +79,21 @@ namespace XMLEditor
 
         private void SelectAdapter_Click(object sender, RoutedEventArgs e)
         {
-            Adapter a = (Adapter)Adapters.SelectedItem;
-            if (a != null)
+            NetworkInterface ni = (NetworkInterface)Adapters.SelectedItem;
+            if (ni != null)
             {
-                AdapterEditor window = new AdapterEditor(ref a, this);
+                Window window;
+                if (ni.GetType().ToString() == "NSHG.NetworkInterfaces.Adaptor")
+                {
+                    Adapter a = (Adapter)ni;
+                    window = new AdapterEditor(ref a, this);
+
+                }else if (ni.GetType().ToString() == "NSHG.NetworkInterfaces.GroupAdaptor")
+                {
+                    return;
+                    GroupAdapter ga = (GroupAdapter)ni;
+                    //GroupAdapterEditor window = new GroupAdapterEditor(ref ga, this);
+                }else return;
                 window.Show();
                 window.Focus();
             }

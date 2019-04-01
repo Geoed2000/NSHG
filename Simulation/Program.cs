@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using NSHG;
+using NSHG.NetworkInterfaces;
+using NSHG.Applications;
 
 
 namespace Simulation
 {
     class Program
     {
-        
-
         //static Network edit(Network network)
         //{
         //    string input;
@@ -58,8 +58,19 @@ namespace Simulation
     
         static void Main(string[] args)
         {
-            NSHG.System s = new NSHG.System(1);
-            Console.WriteLine(new GroupAdapter(MAC.Random(), 1).GetType().ToString());
+            //Dictionary<MAC, NetworkInterface> interfaces = new Dictionary<MAC, NetworkInterface>();
+            //NetworkInterface ni;
+            //ni = new GroupAdapter(MAC.Random(), 1);
+            //interfaces.Add(ni.MyMACAddress, ni);
+
+            //NSHG.System s = new NSHG.Router(1,interfaces);
+
+            //foreach(Application app in s.Apps)Console.WriteLine(app.GetType());
+
+            Network n = Network.LoadNetwork("sys1.xml", Console.WriteLine);
+            Console.WriteLine(n.SaveNetwork("sys2.xml", Console.WriteLine));
+
+
             Console.ReadKey();
 
         }

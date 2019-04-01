@@ -30,6 +30,10 @@ namespace XMLEditor
                 case "NSHG.System":
                     Frame.Content = new SystemEditor(network, s, parent);
                     break;
+
+                case "NSHG.Router":
+                    Frame.Content = new SystemEditor(network, s, parent);
+                    break;
                 default:
                     Frame.Content = new Label() { Content = "Error Reading System Type" };
                     break;
