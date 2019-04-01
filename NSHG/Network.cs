@@ -28,7 +28,7 @@ namespace NSHG
 
         public bool Connect(uint sysA, uint sysB)
         {
-            Adapter a, b;
+            NetworkInterface a, b;
             if (Systems[sysA].GetConnectedUnassociatedAdapter(out a, sysB) && Systems[sysB].GetConnectedUnassociatedAdapter(out b, sysA))
             {
                 a.Connect(b);
@@ -36,7 +36,7 @@ namespace NSHG
                 Connections.Add(new Tuple<uint, uint>(sysA, sysB));
                 return true;
             }
-            else if (Systems[sysA].GetFreeAdapter(out a) && Systems[sysB].GetFreeAdapter(out b))
+            else if (Systems[sysA].GetConectableAdapter(out a) && Systems[sysB].GetConectableAdapter(out b))
             {
                 a.Connect(b);
                 b.Connect(a);
@@ -97,7 +97,7 @@ namespace NSHG
                         try
                         {
                             network.Systems.Add(sys.ID, sys);
-                            foreach(Adapter a in sys.Adapters.Values)
+                            foreach(Adapter a in sys.NetworkInterfaces.Values)
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }

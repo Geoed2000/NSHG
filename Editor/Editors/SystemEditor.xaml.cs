@@ -39,7 +39,7 @@ namespace XMLEditor
             parent.ReloadSystemPane();
 
             IDIn.Text = sys.ID.ToString();
-            Adapters.ItemsSource = sys.Adapters.ToArray();
+            Adapters.ItemsSource = sys.NetworkInterfaces.ToArray();
             RTEIn.IsChecked = sys.respondToEcho;
         }
 
@@ -53,7 +53,7 @@ namespace XMLEditor
                     network.Systems[tmpId] = network.Systems[sys.ID];
                     network.Systems.Remove(sys.ID);
                     sys.ID = tmpId;
-                    foreach (Adapter a in sys.Adapters.Values)
+                    foreach (Adapter a in sys.NetworkInterfaces.Values)
                     {
                         a.sysID = tmpId;
                     }
@@ -96,7 +96,7 @@ namespace XMLEditor
                 m = MAC.Random();
             } while (network.TakenMacAddresses.Contains(m));
 
-            sys.Adapters.Add(m, new Adapter(m, sys.ID));
+            sys.NetworkInterfaces.Add(m, new Adapter(m, sys.ID));
 
             network.TakenMacAddresses.Add(m);
             UpdateView();
@@ -106,9 +106,9 @@ namespace XMLEditor
         {
             if (Adapters.SelectedIndex != -1)
             {
-                MAC m = sys.Adapters.Values.ElementAt(Adapters.SelectedIndex).MyMACAddress;
+                MAC m = sys.NetworkInterfaces.Values.ElementAt(Adapters.SelectedIndex).MyMACAddress;
                 network.TakenMacAddresses.Remove(m);
-                sys.Adapters.Remove(m);
+                sys.NetworkInterfaces.Remove(m);
                 UpdateView();
             }
         }

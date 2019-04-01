@@ -8,6 +8,7 @@
       <localip>192.168.1.2</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
+      <dns>1.1.1.1</dns>
       <connectedsystem>1</connectedsystem>
       <connected>True</connected>
     </Adapter>
@@ -25,6 +26,7 @@
         <localip>192.168.1.2</localip>
         <subnetmask>255.255.255.0</subnetmask>
         <defaultgateway>192.168.1.1</defaultgateway>
+        <dns>1.1.1.1</dns>
         <connectedsystem>1</connectedsystem>
         <connected>True</connected>
       </Adapter>

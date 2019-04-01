@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 using NSHG;
-using NSHG.Headers;
+using NSHG.Protocols.IPv4;
 
 namespace XUnitTests
 {

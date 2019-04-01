@@ -1,31 +1,30 @@
-﻿ using System;
+﻿using NSHG.Applications;
+using NSHG.Protocols.ICMP;
+using NSHG.Protocols.IPv4;
+using NSHG.Protocols.TCP;
+using NSHG.Protocols.UDP;
+using System;
 using System.Collections.Generic;
 using System.Xml;
-using NSHG.Protocols.IPv4;
-using NSHG.Protocols.ICMP;
-using NSHG.Applications;
+
 namespace NSHG
 {
-    public class Adapter
+    public abstract class NetworkInterface
     {
         public string Name { get; set; }
         public uint sysID;
         public MAC MyMACAddress { get; set; }
         public IP LocalIP;
         public IP SubnetMask;
-        public IP DefaultGateway;
-        public IP DNS;
-        public Adapter OtherEnd;
-        public uint OtherendID;
-        private bool _Connected;
-        public  bool Connected
+        protected bool _Connected;
+        public bool Connected
         {
             get
             {
                 return _Connected;
             }
         }
-        public  bool Associated;
+        public bool Associated;
 
         private readonly object SendLock;
         private Queue<byte[]> _SendQueue;
@@ -48,7 +47,7 @@ namespace NSHG
         }
 
         private readonly object RecieveLock;
-        public Queue<byte[]> _RecieveQueue;
+        private Queue<byte[]> _RecieveQueue;
         public Queue<byte[]> RecieveQueue
         {
             get
@@ -66,21 +65,58 @@ namespace NSHG
                 }
             }
         }
- 
-        public event Action<byte[],Adapter> OnRecievedPacket;
 
-        public Adapter(MAC MACAddress, uint sysID, string name = null, IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false)
+        public event Action<byte[],NetworkInterface> OnRecievedPacket;
+
+        protected void CallOnRecievedPacket(byte[] Data, NetworkInterface NetInterface)
         {
+            OnRecievedPacket.Invoke(Data, NetInterface);
+        }
+
+        protected NetworkInterface(MAC MACAddress, uint SysID)
+        {
+            MyMACAddress = MACAddress;
+            this.sysID = SysID;
+
+
             SendLock = new object();
             RecieveLock = new object();
-
-            MyMACAddress = MACAddress;
-            this.sysID = sysID;
             SendQueue = new Queue<byte[]>();
             RecieveQueue = new Queue<byte[]>();
+
+        }
+        
+        public abstract XmlNode ToXML(XmlDocument doc);
+
+        public abstract bool Connect(NetworkInterface a);
+
+        public abstract void Reset();
+
+        public virtual void SendPacket(byte[] datagram)
+        {
+            SendQueue.Enqueue(datagram);
+        }
+
+        public virtual void RecievePacket(byte[] datagram)
+        {
+            RecieveQueue.Enqueue(datagram);
+        }
+
+        public abstract void Tick(uint tick);
+    }
+
+    public class Adapter : NetworkInterface
+    {
+        public IP DefaultGateway;
+        public IP DNS;
+        public NetworkInterface OtherEnd;
+        public uint OtherendID;
+        
+        public Adapter(MAC MACAddress, uint sysID, string name = "", IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false) : base(MACAddress, sysID)
+        {
+            Name = name;
             if (Connected)
             {
-                Name = name;
                 this.LocalIP = LocalIP;
                 this.SubnetMask = SubnetMask;
                 this.DefaultGateway = DefaultGateway;
@@ -223,7 +259,7 @@ namespace NSHG
             return a;
         }
 
-        public XmlNode ToXML(XmlDocument doc)
+        public override XmlNode ToXML(XmlDocument doc)
         {
             XmlNode parent = doc.CreateElement("Adapter");
 
@@ -266,7 +302,7 @@ namespace NSHG
             return parent;
         }
 
-        public bool Connect(Adapter a)
+        public override bool Connect(NetworkInterface a)
         {
             if (!_Connected)
             {
@@ -284,14 +320,12 @@ namespace NSHG
             return false;
         }
 
-        public void Reset()
+        public override void Reset()
         {
-            Name = null;
             LocalIP = null;
             SubnetMask = null;
             DefaultGateway = null;
             DNS = null;
-            OtherEnd = null;
         }
 
         public override bool Equals(object obj)
@@ -348,19 +382,8 @@ namespace NSHG
         {
             return BitConverter.ToInt32(MyMACAddress.ToBytes(), 0);
         }
-
-        public void SendPacket(byte[] datagram)
-        {
-            SendQueue.Enqueue(datagram);
-        }
-
-        public void RecievePacket(byte[] datagram)
-        {
-            RecieveQueue.Enqueue(datagram);
-        }
-
-
-        public void Tick(uint tick)
+        
+        public override void Tick(uint tick)
         {
             if (SendQueue.Count != 0)
             {
@@ -368,136 +391,273 @@ namespace NSHG
             }
             if (RecieveQueue.Count != 0)
             {
-                OnRecievedPacket.Invoke(RecieveQueue.Dequeue(),this);
+                CallOnRecievedPacket(RecieveQueue.Dequeue(), this);
             }
         }
     }
 
-    public class RoutingTable
+    public class GroupAdapter:NetworkInterface
     {
-        public struct Entry
-        {
-            public IP Destination;
-            public IP Netmask;
-            public IP Gateway;
-            public MAC Interface;
-            public uint Metric;
-        }
+        List<uint> OtherEndIDs;
+        SortedList<uint, NetworkInterface> OtherEnds;
 
-        public SortedList<uint,Entry> Entries;
-        public SortedList<uint,Entry> StaticEntries;
-        System sys;
-        
-        public RoutingTable(System s)
+        public GroupAdapter(MAC MACAddress, uint SysID, string name = "", IP LocalIP = null, IP SubnetMask = null, List<uint> OtherEndIDs = null, bool Connected = false):base(MACAddress, SysID)
         {
-            Entries = new SortedList<uint, Entry>();
-            
-        }
-
-        private void GenerateTable()
-        {
-            foreach (Adapter a in sys.Adapters.Values)
+            Name = name;
+            if (Connected)
             {
-                if (a.Connected)
+                this.OtherEndIDs = OtherEndIDs;
+                this.LocalIP = LocalIP;
+                this.SubnetMask = SubnetMask;
+                _Connected = true;
+            }
+            else
+            {
+                OtherEndIDs = new List<uint>();
+                _Connected = false;
+            }
+            OtherEnds = new SortedList<uint, NetworkInterface>();
+            if (OtherEndIDs == null)
+            {
+                OtherEndIDs = new List<uint>();
+                _Connected = false;
+            }
+            Associated = false;
+        }
+
+        public override XmlNode ToXML(XmlDocument doc)
+        {
+            XmlNode parent = doc.CreateElement("GroupAdapter");
+
+            XmlNode nameNode = doc.CreateElement("Name");
+            nameNode.InnerText = this.Name;
+            parent.AppendChild(nameNode);
+
+            XmlNode SysIDNode = doc.CreateElement("SysID");
+            SysIDNode.InnerText = this.sysID.ToString();
+            parent.AppendChild(SysIDNode);
+
+            XmlNode MacNode = doc.CreateElement("MAC");
+            MacNode.InnerText = this.MyMACAddress.ToString();
+            parent.AppendChild(MacNode);
+
+            XmlNode LocalIpNode = doc.CreateElement("LocalIP");
+            LocalIpNode.InnerText = this.LocalIP.ToString();
+            parent.AppendChild(LocalIpNode);
+
+            XmlNode SubnetMaskNode = doc.CreateElement("SubnetMask");
+            SubnetMaskNode.InnerText = this.SubnetMask.ToString();
+            parent.AppendChild(SubnetMaskNode);
+            
+            XmlNode OtherEndsNode = doc.CreateElement("ConnectedSystems");
+
+            foreach(uint s in OtherEndIDs)
+            {
+                XmlNode n = doc.CreateElement("ID");
+                n.InnerText = s.ToString();
+            }
+            parent.AppendChild(OtherEndsNode);
+
+            XmlNode ConnectedNode = doc.CreateElement("Connected");
+            ConnectedNode.InnerText = this.Connected.ToString();
+            parent.AppendChild(ConnectedNode);
+
+            return parent;
+        }
+
+        public static GroupAdapter FromXML(XmlNode Parent)
+        {
+            string Name = null;
+            uint sysID = 0;
+            MAC MacAddress = null;
+            IP LocalIP = null;
+            IP SubnetMask = null;
+            List<uint> OtherEndids = new List<uint>();
+            bool Connected = false;
+
+            foreach (XmlNode n in Parent.ChildNodes)
+            {
+                switch (n.Name.ToLower())
                 {
-                    Entries.Add(50, new Entry 
-                    {
-                        Destination = a.LocalIP | a.SubnetMask,
-                        Netmask = a.SubnetMask,
-                        Gateway = null,
-                        Interface = a.MyMACAddress,
-                        Metric = 50
-                    });
-                    Entries.Add(225, new Entry
-                    {
-                        Destination = a.LocalIP,
-                        Netmask = IP.Broadcast,
-                        Gateway = null,
-                        Interface = a.MyMACAddress,
-                        Metric = 225
-                    });
-                    if (a.DefaultGateway != null)
-                    {
-                        Entries.Add(1, new Entry
+                    case "name":
+                        Name = n.InnerText;
+                        break;
+                    case "sysid":
+                        try
                         {
-                            Destination = IP.Zero,
-                            Netmask = IP.Zero,
-                            Gateway = a.DefaultGateway,
-                            Interface = a.MyMACAddress,
-                            Metric = 1
-                        });
-                    }
+                            sysID = uint.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Adapter system ID, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "mac":
+                    case "macaddress":
+                        try
+                        {
+                            MacAddress = MAC.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read MAC address, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "localip":
+                        try
+                        {
+                            LocalIP = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read IP address, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "subnetmask":
+                        try
+                        {
+                            SubnetMask = IP.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read SubnetMask, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "connectedsystems":
+                    case "otherends":
+                        try
+                        {
+                            foreach(XmlNode node in n.ChildNodes)
+                            OtherEndids.Add(uint.Parse(node.InnerText));
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Connected System(otherend), invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "connected":
+                        try
+                        {
+                            Connected = bool.Parse(n.InnerText);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read Connected status, invalid formatting");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
                 }
             }
-        }
-
-        public void NewStaticEntry(Entry e)
-        {
-            StaticEntries.Add(e.Metric, e);
-        }
-
-        public void Route(IPv4Header datagram)
-        {
-            List<Entry> entries = (List<Entry>)Entries.Values;
-            
-
-            for(int i = entries.Count-1; i < 0; i--)
+            if (MacAddress == null||sysID == 0)
             {
-                Entry e = entries[i];
-                if ((e.Destination & e.Netmask) == (datagram.DestinationAddress & e.Netmask))
-                    if (sys.SendPacket(e.Interface, datagram))
-                        return;
-                    
+                throw new ArgumentException("MacAddress or SYSID not provided");
+            }
+
+            GroupAdapter a = new GroupAdapter(MacAddress, sysID, Name, LocalIP, SubnetMask, OtherEndids, Connected);
+            return a;
+        }
+
+        public override bool Connect(NetworkInterface a)
+        {
+            OtherEnds.Add(a.sysID, a);
+            _Connected = true;
+
+            if (!OtherEndIDs.Contains(a.sysID))
+            {
+                OtherEndIDs.Add(a.sysID);
+            }
+            else
+            {
+                foreach (uint id in OtherEndIDs)
+                {
+                    if (!OtherEnds.ContainsKey(id))
+                    {
+                        Associated = false;
+                        return true;
+                    }
+                }
+                Associated = true;
+            }
+            return true;
+        }
+
+        public override void Reset()
+        {
+            LocalIP = null;
+            SubnetMask = null;
+
+        }
+
+        public override void Tick(uint tick)
+        {
+            if (SendQueue.Count != 0)
+            {
+                foreach(NetworkInterface n in OtherEnds.Values) n.RecievePacket(SendQueue.Dequeue());
+            }
+            if (RecieveQueue.Count != 0)
+            {
+                CallOnRecievedPacket(RecieveQueue.Dequeue(), this);
             }
         }
 
     }
-
+    
     public class System
     {
         public uint ID;
 
-        public Dictionary<MAC,Adapter> Adapters;
-
-        public RoutingTable RoutingTable;
-
+        public Dictionary<MAC,NetworkInterface> NetworkInterfaces;
+        
         public List<String> Log;
 
         public bool respondToEcho;
         
 
-        private event Action<Byte[],Adapter> OnRecievedPacket;
-        private event Action<Byte[],Adapter> OnCorruptPacket; 
-        private event Action<IPv4Header,Adapter> OnNotForMe;  
-        private event Action<IPv4Header,Adapter> OnICMPPacket;
-        
+        private event Action<Byte[],NetworkInterface> OnRecievedPacket;
+        private event Action<Byte[],NetworkInterface> OnCorruptPacket; 
+        private event Action<IPv4Header,NetworkInterface> OnNotForMe;  
+        private event Action<IPv4Header,NetworkInterface> OnICMPPacket;
+        private event Action<IPv4Header, NetworkInterface> OnTCPPacket;
+        private event Action<IPv4Header, NetworkInterface> OnUDPPacket;
+
         protected System()
         {
             OnICMPPacket += handleICMPPacket;
+            OnTCPPacket += handleTCPPacket;
+            OnUDPPacket += handleUDPPacket;
             OnTick += AdapterTick;
 
-            RoutingTable = new RoutingTable(this);
-            
             Log = new List<string>();
         }
 
         public System(uint ID):this()
         {
             this.ID = ID;
-            Adapters = new Dictionary<MAC, Adapter>();
+            NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
             respondToEcho = false;
         }
 
-        public System(uint ID, Dictionary<MAC,Adapter> Adapters = null, bool Respondtoecho = true):this()
+        public System(uint ID, Dictionary<MAC,NetworkInterface> NetworkInterfaces = null, bool Respondtoecho = true):this()
         {
             this.ID = ID;
-            if (Adapters != null)
+            if (NetworkInterfaces != null)
             {
-                this.Adapters = Adapters;
+                this.NetworkInterfaces = NetworkInterfaces;
             }
             else
             {
-                Adapters = new Dictionary<MAC, Adapter>();
+                NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
             }
             this.respondToEcho = Respondtoecho;
         }
@@ -518,14 +678,14 @@ namespace NSHG
 
             if (!((ID == s.ID) && (respondToEcho == s.respondToEcho))) Equal = false;
 
-            foreach (Adapter a in Adapters.Values)
+            foreach (Adapter a in NetworkInterfaces.Values)
             {
-                if (!(s.Adapters.ContainsValue(a))) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
+                if (!(s.NetworkInterfaces.ContainsValue(a))) Equal = false;//compares adapter a to every adapter in the s.adapters list until it
                                                            //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
             }
-            foreach (Adapter a in s.Adapters.Values)
+            foreach (Adapter a in s.NetworkInterfaces.Values)
             {
-                if (!Adapters.ContainsValue(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
+                if (!NetworkInterfaces.ContainsValue(a)) Equal = false; //compares adapter a to every adapter in the s.adapters list until it 
                                                           //finds an addapter where adapter 'a' is equal to it (runs a.equals(adapter) for each adapter)
             }
             return Equal;
@@ -534,7 +694,7 @@ namespace NSHG
         public static System FromXML(XmlNode Parent)
         {
             uint ID = 0;
-            Dictionary<MAC, Adapter> Adapters = new Dictionary<MAC, Adapter>();
+            Dictionary<MAC, NetworkInterface> NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
             bool respondToEcho = true;
 
             foreach (XmlNode n in Parent.ChildNodes)
@@ -553,12 +713,25 @@ namespace NSHG
                         try
                         {
                             Adapter a = Adapter.FromXML(n);
-                            Adapters.Add(a.MyMACAddress,a);
+                            NetworkInterfaces.Add(a.MyMACAddress,a);
                         }
                         catch
                         {
                             Console.ForegroundColor = ConsoleColor.Red;
                             Console.WriteLine("Failed to read adapter");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                        break;
+                    case "groupadapter":
+                        try
+                        {
+                            GroupAdapter a = GroupAdapter.FromXML(n);
+                            NetworkInterfaces.Add(a.MyMACAddress, a);
+                        }
+                        catch
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Failed to read groupadapter");
                             Console.ForegroundColor = ConsoleColor.White;
                         }
                         break;
@@ -581,7 +754,7 @@ namespace NSHG
                 throw new Exception("Invalid System XML ID not Specified");
             }
 
-            return new System(ID,Adapters,respondToEcho);
+            return new System(ID,NetworkInterfaces,respondToEcho);
 
 
         }
@@ -598,7 +771,7 @@ namespace NSHG
             RespondToEchoNode.InnerText = this.respondToEcho.ToString();
             parent.AppendChild(RespondToEchoNode);
 
-            foreach (Adapter a in Adapters.Values)
+            foreach (Adapter a in NetworkInterfaces.Values)
             {
                 parent.AppendChild(a.ToXML(doc));
             }
@@ -606,13 +779,13 @@ namespace NSHG
             return parent;
         }
 
-        public bool GetFreeAdapter(out Adapter a)
+        public bool GetConectableAdapter(out NetworkInterface a)
         {
-            foreach (Adapter adapt in Adapters.Values)
+            foreach (NetworkInterface NI in NetworkInterfaces.Values)
             {
-                if (!adapt.Connected)
+                if (!NI.Connected || NI.GetType().ToString() == "NSHG.GroupAdapter")
                 {
-                    a = adapt;
+                    a = NI;
                     return true;
                 }
             }
@@ -626,9 +799,9 @@ namespace NSHG
         /// <param name="a">adapter that is free to connect to</param>
         /// <param name="id">id of the system to be connected to</param>
         /// <returns> if an adapter was found</returns>
-        public bool GetConnectedUnassociatedAdapter(out Adapter a, uint id)
+        public bool GetConnectedUnassociatedAdapter(out NetworkInterface a, uint id)
         {
-            foreach (Adapter adapt in Adapters.Values)
+            foreach (NetworkInterface adapt in NetworkInterfaces.Values)
             {
                 if (adapt.Connected == true && adapt.Associated == false)
                 {
@@ -644,9 +817,9 @@ namespace NSHG
 
 
         // Packet Handeling
-        public void Packet(byte[] datagram, Adapter a)
+        public void Packet(byte[] datagram, NetworkInterface a)
         {
-            OnRecievedPacket.BeginInvoke(datagram, a, null, null);
+            OnRecievedPacket.Invoke(datagram, a);
             IPv4Header Data;
             try
             {
@@ -663,23 +836,26 @@ namespace NSHG
                 switch (Data.Protocol)
                 {
                     case IPv4Header.ProtocolType.ICMP:
-                        OnICMPPacket.BeginInvoke(Data, a, null, null);
+                        OnICMPPacket.Invoke(Data, a);
                         break;
+                    case IPv4Header.ProtocolType.TCP:
+
+                    case IPv4Header.ProtocolType.UDP:
                     default:
                         break;
                 }
             }
             else
             {
-                OnNotForMe.BeginInvoke(Data, a, null, null);
+                OnNotForMe.Invoke(Data, a);
             }
         }
 
         public bool SendPacket(MAC adapter, IPv4Header data)
         {
-            if (Adapters.ContainsKey(adapter))
+            if (NetworkInterfaces.ContainsKey(adapter))
             {
-                Adapters[adapter].SendPacket(data.ToBytes());
+                NetworkInterfaces[adapter].SendPacket(data.ToBytes());
                 return true;
             }
             else
@@ -688,7 +864,7 @@ namespace NSHG
             }
         }
 
-        private void handleICMPPacket(IPv4Header datagram, Adapter a)
+        protected virtual void handleICMPPacket(IPv4Header datagram, NetworkInterface a)
         {
             switch (datagram.Datagram[0])
             {
@@ -713,21 +889,56 @@ namespace NSHG
                     break;
             }
         }
+        
+        protected virtual void handleTCPPacket(IPv4Header datagram, NetworkInterface a)
+        {
+            TCPHeader TCP;
+            try
+            {
+                TCP = new TCPHeader(datagram.Datagram);
+            }
+            catch
+            {
+                OnCorruptPacket.Invoke(datagram.ToBytes(), a);
+                return;
+            }
+
+            TCPListner[TCP.DestinationPort].Invoke(datagram, TCP, a);
+        }
+        
+        protected virtual void handleUDPPacket(IPv4Header datagram, NetworkInterface a)
+        {
+            UDPHeader UDP;
+            try
+            {
+                UDP = new UDPHeader(datagram.Datagram);
+            }
+            catch
+            {
+                OnCorruptPacket.Invoke(datagram.ToBytes(), a);
+                return;
+            }
+
+            UDPListner[UDP.DestinationPort].Invoke(datagram, UDP, a);
+        }
 
         // Dictonary subscribed to for when a packed with spesific ID (Uint16) is recieved and needs to be processed
         // Used to pass from network to Application layer
-        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>> ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, Adapter>>();
+        protected Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, NetworkInterface>>   ICMPEcholistner = new Dictionary<UInt16, Action<IPv4Header, ICMPEchoRequestReply, NetworkInterface>>();
+        
+        protected Dictionary<UInt16, Action<IPv4Header, Protocols.TCP.TCPHeader, NetworkInterface>> TCPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.TCP.TCPHeader, NetworkInterface>>();
 
-        protected Dictionary<UInt16, Action<IPv4Header,Protocols.UDP.UDPHeader, Adapter>> UDPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.UDP.UDPHeader, Adapter>>();
-                                                                                                                        
-        protected Dictionary<UInt16, Action<IPv4Header,Protocols.TCP.TCPHeader, Adapter>> TCPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.TCP.TCPHeader, Adapter>>();
+        protected Dictionary<UInt16, Action<IPv4Header,Protocols.UDP.UDPHeader, NetworkInterface>> UDPListner = new Dictionary<UInt16, Action<IPv4Header, Protocols.UDP.UDPHeader, NetworkInterface>>();
 
         // Application Layer
-        List<Application> Apps = new List<Application>();
+        protected List<Application> Apps = new List<Application>();
+        
+        public RoutingTable RoutingTable;
 
-        public void AppsInit()
-        {
-            Apps.Add(new DHCPClient(ref UDPListner, new List<Adapter>(Adapters.Values)));
+        protected virtual void AppsInit()
+        { 
+            RoutingTable = new RoutingTable(this);
+            Apps.Add(RoutingTable);
         } 
         // AI
 
@@ -741,17 +952,40 @@ namespace NSHG
 
         public void AdapterTick(uint tick)
         {
-            foreach (Adapter A in Adapters.Values)
+            foreach (NetworkInterface A in NetworkInterfaces.Values)
             {
                 A.Tick(tick);
             }
         }
+
+        public void ApplicationTick(uint tick)
+        {
+            foreach (Application a in Apps)
+            {
+                a.OnTick(tick);
+            }
+        }
     }
 
-    //public class Router : System
-    //{
-        
-    //}
+    public class PC : System
+    {
+        protected override void AppsInit()
+        {
+            Apps.Add(new DHCPClient(ref UDPListner, new List<NetworkInterface>(NetworkInterfaces.Values)));
+            RoutingTable = new SystemRoutingTable(this);
+            Apps.Add(RoutingTable);
+        }
+    }
+
+    public class Router : System
+    {
+        protected override void AppsInit()
+        {
+            Apps.Add(new DHCPServer(ref UDPListner));
+            RoutingTable = new SystemRoutingTable(this);
+            Apps.Add(RoutingTable);
+        }
+    }
 
     //public class EchoServer : System
     //{

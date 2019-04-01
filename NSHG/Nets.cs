@@ -93,6 +93,8 @@ namespace NSHG
                 return false;
             }
 
+            if (isNull(ip)) return false;
+
             Byte[] bip = ip.ToBytes();
             for (int i = 0; i < 4; i++)
             {
@@ -100,6 +102,18 @@ namespace NSHG
             }
 
             return true;
+        }
+        public static bool isNull(IP iP)
+        {
+            try
+            {
+                byte[] b = iP.Ip;
+                return false;
+            }
+            catch
+            {
+                return true;
+            }
         }
 
         public static IP operator &(IP ip1, IP ip2)
@@ -122,8 +136,8 @@ namespace NSHG
         }
         public static bool operator ==(IP ip1, IP ip2)
         {
-            if (ip1 == null)
-                if (ip2 == null) return true;
+            if (isNull(ip1))
+                if (isNull(ip2)) return true;
                 else return false;
             else return ip1.Equals(ip2);
         }

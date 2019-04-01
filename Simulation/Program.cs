@@ -59,21 +59,7 @@ namespace Simulation
         static void Main(string[] args)
         {
             NSHG.System s = new NSHG.System(1);
-
-            MAC m = MAC.Random();
-            s.Adapters.Add(m,new Adapter(m, s.ID));
-            
-            RoutingTable r = new RoutingTable(s);
-
-            r.NewEntry(new RoutingTable.Entry() { Metric = 1 });
-            r.NewEntry(new RoutingTable.Entry() { Metric = 2 });
-            r.NewEntry(new RoutingTable.Entry() { Metric = 4 });
-            r.NewEntry(new RoutingTable.Entry() { Metric = 3 });
-
-            foreach (RoutingTable.Entry e in r.Entries.Values)
-            {
-                Console.WriteLine(e.Metric.ToString());
-            }
+            Console.WriteLine(new GroupAdapter(MAC.Random(), 1).GetType().ToString());
             Console.ReadKey();
 
         }

@@ -360,7 +360,7 @@ namespace NSHG.Applications
         SortedList<uint,session> sessions = new SortedList<uint,session>();
         
         
-        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, Adapter>> UDPListner, List<Adapter> adapters)
+        public DHCPClient(ref Dictionary<UInt16,Action<IPv4Header, UDPHeader, NetworkInterface>> UDPListner, List<NetworkInterface> adapters)
         {
             UDPListner.Add(68, packet);
             foreach (Adapter a in adapters)
@@ -370,13 +370,22 @@ namespace NSHG.Applications
             }
         }
 
-        public void AddAdapter(Adapter a)
+        public void AddAdapter(NetworkInterface n)
         {
+            Adapter a;
+            try
+            {
+                a = (Adapter)n;
+            }
+            catch
+            {
+                return;
+            }
             session s = new session(a);
             sessions.Add(s.xid, s);
         }
 
-        public void packet(IPv4Header ipv4, UDPHeader udp, Adapter a)
+        public void packet(IPv4Header ipv4, UDPHeader udp, NetworkInterface n)
         {
             try
             {
@@ -385,7 +394,6 @@ namespace NSHG.Applications
             }
             catch { }
         }
-
         
         public override void OnTick(uint tick)
         {
@@ -396,6 +404,11 @@ namespace NSHG.Applications
     public class DHCPServer : Application
     {
         public List<string> Log = new List<string>();
+
+        public DHCPServer(ref Dictionary<UInt16, Action<IPv4Header, UDPHeader, NetworkInterface>> UDPListner)
+        {
+            UDPListner.Add(67, packet);
+        }
 
         public class Lease
         {
@@ -432,7 +445,7 @@ namespace NSHG.Applications
         IP SubnetMask;
         IP DNS = new IP(new byte[4] { 1, 1, 1, 1 });
 
-        public void packet(IPv4Header ipv4, UDPHeader udp, Adapter a)
+        public void packet(IPv4Header ipv4, UDPHeader udp, NetworkInterface a)
         {
             try
             {
