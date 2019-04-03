@@ -49,6 +49,11 @@ namespace NSHG.Applications
         {
 
         }
+
+        public override void Command(string CommandString)
+        {
+
+        }
     }
 
     public class SystemRoutingTable : RoutingTable

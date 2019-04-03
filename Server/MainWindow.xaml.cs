@@ -27,6 +27,7 @@ namespace Server
         private Timer TickTimer = new Timer(200);
         public List<string> CommandLog = new List<string>();
         public List<string> SystemLog = new List<string>();
+        private object LogLock;
         string filepath = "";
         Network network = new Network();
         bool networkloaded = false;
@@ -35,6 +36,7 @@ namespace Server
 
         public MainWindow()
         {
+            LogLock = new object();
             TickTimer.Elapsed += Tick;  
             InitializeComponent();
         }
@@ -42,13 +44,17 @@ namespace Server
         private void Tick(object source, ElapsedEventArgs e)
         {
             tick += 1;
-            Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
-            Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
+            //Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
+            //Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
             foreach (NSHG.System s in network.Systems.Values)
             {
                 s.Tick(tick);
             }
-            Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
+            //Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
+            if (tick % 20 == 0)
+            {
+                Log("tick " + tick);
+            }
         }
 
         private static void OnTimedEvent(Object source, ElapsedEventArgs e)
@@ -58,12 +64,16 @@ namespace Server
 
         public void Log(string log)
         {
-            SystemLog.Add(log);
+            lock (LogLock)
+            {
+                SystemLog.Add(log);
+            }
             Dispatcher.BeginInvoke(new Action(delegate()
             {
                 LogBox.Text += log + "\n";
                 ScrollView.ScrollToBottom();
             }));
+            
         }
 
         private void Command(string command)

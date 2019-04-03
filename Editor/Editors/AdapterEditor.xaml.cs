@@ -33,7 +33,7 @@ namespace XMLEditor
             ConnectedIn.IsChecked = a.Connected;
             if ((bool)ConnectedIn.IsChecked)
             {
-                OtherEndIn.Text = a.OtherendID.ToString();
+                OtherEndIn.Text = a.OtherEndID.ToString();
                 LocalIPIn.Text = a.LocalIP.ToString();
                 SubnetIn.Text = a.SubnetMask.ToString();
                 DefaultGatewayIn.Text = a.DefaultGateway.ToString();
@@ -103,7 +103,7 @@ namespace XMLEditor
             uint tmpId;
             if (uint.TryParse(OtherEndIn.Text, out tmpId))
             {
-                a.OtherendID = tmpId;
+                a.OtherEndID = tmpId;
                 parent.UpdateView();
             }
             else OtherEndIn.Text = "Invalid ID: "+OtherEndIn.Text;

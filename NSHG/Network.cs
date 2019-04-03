@@ -95,7 +95,7 @@ namespace NSHG
                     case "system":
                         try
                         {
-                            sys = NSHG.System.FromXML(node);
+                            sys = NSHG.System.FromXML(node, log);
                         }
                         catch
                         {
@@ -119,11 +119,11 @@ namespace NSHG
                     case "router":
                         try
                         {
-                            sys = NSHG.Router.FromXML(node);
+                            sys = NSHG.Router.FromXML(node, log);
                         }
                         catch
                         {
-                            log("Reading System Failed");
+                            log("Reading Router Failed");
                             break;
                         }
                         try
@@ -133,7 +133,7 @@ namespace NSHG
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
-                            log("Added System \n    ID:" + sys.ID);
+                            log("Added Router \n    ID:" + sys.ID);
                         }
                         catch
                         {
@@ -143,7 +143,7 @@ namespace NSHG
                     case "pc":
                         try
                         {
-                            sys = NSHG.System.FromXML(node);
+                            sys = NSHG.System.FromXML(node, log);
                         }
                         catch
                         {

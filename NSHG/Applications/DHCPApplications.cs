@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using NSHG.NetworkInterfaces;
 using NSHG.Protocols.DHCP;
-using NSHG.Protocols.UDP;
 using NSHG.Protocols.IPv4;
-using NSHG.NetworkInterfaces;
+using NSHG.Protocols.UDP;
+using System;
+using System.Collections.Generic;
 
 namespace NSHG.Applications
 {
     public class DHCPClient : Application
     {
-        public List<string> Log = new List<string>();
-        
         public class session
         {
             public enum State
@@ -26,7 +23,8 @@ namespace NSHG.Applications
                 REBOOTING = 7
 
             }
-            
+
+            Application Client;
             public  UInt32 xid;
             private UInt32 T1;
             private UInt32 T2;
@@ -51,8 +49,9 @@ namespace NSHG.Applications
             IP offeredIP = null;
             IP DHCPServerIP = null;
             
-            public session(Adapter a)
+            public session(Adapter a, Application client)
             {
+                Client = client;
                 this.a = a;
                 if (a.LocalIP != null)
                     state = State.INIT;
@@ -70,7 +69,11 @@ namespace NSHG.Applications
                         switch ((DHCPOption.MsgType)o.data[0])
                         {
                             case DHCPOption.MsgType.DHCPACK:
+                                Client.Log.Add(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
+                                RequestResponce = d;
+                                break;
                             case DHCPOption.MsgType.DHCPNAK:
+                                Client.Log.Add(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
                                 RequestResponce = d;
                                 break;
                             case DHCPOption.MsgType.DHCPOFFER:
@@ -359,17 +362,18 @@ namespace NSHG.Applications
         }
 
         SortedList<uint,session> sessions = new SortedList<uint,session>();
-        
-        
-        public DHCPClient(System s, List<NetworkInterface> adapters)
+
+
+        public DHCPClient(System s, List<NetworkInterface> adapters) : base()
         {
             s.OnUDPPacket += (packet);
             foreach (Adapter a in adapters)
             {
-                session sesh = new session(a);
+                session sesh = new session(a, this);
                 sessions.Add(sesh.xid, sesh);
             }
         }
+
 
         public void AddAdapter(NetworkInterface n)
         {
@@ -382,11 +386,11 @@ namespace NSHG.Applications
             {
                 return;
             }
-            session s = new session(a);
+            Log.Add("Adding new session on adapter " + a.Name + " " + a.MyMACAddress.ToString());
+            session s = new session(a, this);
             sessions.Add(s.xid, s);
         }
-
-        public void packet(IPv4Header ipv4, UDPHeader udp,UInt16 dest, NetworkInterface n)
+        public void packet(IPv4Header ipv4, UDPHeader udp, UInt16 dest, NetworkInterface n)
         {
             if(dest == 68)
             {
@@ -403,27 +407,18 @@ namespace NSHG.Applications
         
         public override void OnTick(uint tick)
         {
+            Log("DHCPClient Ticking");
             foreach (session s in sessions.Values) s.OnTick(tick);
         }
+        public override void Command(string commandstring)
+        { 
+
+        }
+
     }
 
     public class DHCPServer : Application
     {
-        public List<string> Log = new List<string>();
-
-        public NetworkInterface NetInterface;
-
-        public uint currenttick = 0;
-
-        public DHCPServer(System s, NetworkInterface a, IP Router)
-        {
-            RouterIP = Router;
-            SubnetMask = a.SubnetMask;
-            NetInterface = a;
-            ThisIP = NetInterface.LocalIP;
-            s.OnUDPPacket += packet;
-        }
-
         public class Lease
         {
             public IP ciaddr;
@@ -448,17 +443,29 @@ namespace NSHG.Applications
             }
         }
 
-        public SortedList<IP, Lease> Leases = new SortedList<IP, Lease>();
-
-        public SortedList<IP, Lease> Reserved = new SortedList<IP, Lease>();
-
         static Random r = new Random();
 
-        IP RouterIP;
+        public NetworkInterface NetInterface;
+        IP GatewayIP;
         readonly IP ThisIP;
         IP SubnetMask;
         IP DNS = new IP(new byte[4] { 1, 1, 1, 1 });
+        
+        public SortedList<IP, Lease> Leases = new SortedList<IP, Lease>();
+        public SortedList<IP, Lease> Reserved = new SortedList<IP, Lease>();
+        
+        public uint currenttick = 0;
 
+        public DHCPServer(System s, NetworkInterface a, IP Router) : base()
+        {
+            GatewayIP = Router;
+            SubnetMask = a.SubnetMask;
+            NetInterface = a;
+            ThisIP = NetInterface.LocalIP;
+            s.OnUDPPacket += packet;
+        }
+
+        
         public bool isAvailable(IP ip, MAC client)
         {
             if (Leases.ContainsKey(ip))
@@ -473,7 +480,6 @@ namespace NSHG.Applications
             }
             else return true;
         }
-
         public IP NewAddress(MAC client)
         {
             IP checking = new IP(ThisIP.ToBytes());
@@ -490,7 +496,6 @@ namespace NSHG.Applications
             return checking;
             
         }
-
         public void packet(IPv4Header ipv4, UDPHeader udp, UInt16 dest, NetworkInterface a)
         {
             if (dest == 67)
@@ -513,7 +518,7 @@ namespace NSHG.Applications
                                             ol.Add(new DHCPOption(Tag.dhcpServerID, a.LocalIP.ToBytes()));
                                             break;
                                         case Tag.router:
-                                            ol.Add(new DHCPOption(Tag.router, RouterIP.ToBytes()));
+                                            ol.Add(new DHCPOption(Tag.router, GatewayIP.ToBytes()));
                                             break;
                                         case Tag.subnetmask:
                                             ol.Add(new DHCPOption(Tag.subnetmask, SubnetMask.ToBytes()));
@@ -528,12 +533,18 @@ namespace NSHG.Applications
                                 switch ((DHCPOption.MsgType)o.data[0])
                                 {
                                     case DHCPOption.MsgType.DHCPDISCOVER:
+                                        Log.Add("DHCPDescover recieved from " + dHCP.chaddr.ToString());
                                         newdHCP.yiaddr = NewAddress(dHCP.chaddr);
                                         if (newdHCP == null) break;
                                         ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPOFFER }));
+
+                                        Log.Add("Offered IP " + newdHCP.yiaddr + " to " + newdHCP.chaddr);
                                         break;
                                     case DHCPOption.MsgType.DHCPREQUEST:
                                         IP Request = new IP(dHCP.options.Find(match => match.tag == Tag.addressRequest).data,0);
+
+                                        Log.Add("DHCPRequest recieved from " + dHCP.chaddr.ToString());
+
                                         if (isAvailable(Request, dHCP.chaddr))
                                         {
                                             if (Reserved.ContainsKey(Request))
@@ -542,9 +553,15 @@ namespace NSHG.Applications
                                                 Leases.Remove(Request);
                                             Lease l = new Lease(Request, dHCP.chaddr, currenttick, (uint)r.Next(1200, 1800));
                                             Leases.Add(l.ciaddr, l);
-                                            ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK}));
+                                            ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
+                                            Log.Add("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
                                         }
-                                        else ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
+                                        else
+                                        {
+                                            ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPNAK }));
+                                            Log.Add("denied lease of " + Request + " to " + dHCP.chaddr);
+                                        }
+                                            
                                         break;
 
                                 }
@@ -561,7 +578,7 @@ namespace NSHG.Applications
 
                 }
         }
-
+        
         public override void OnTick(uint tick)
         {
             currenttick++;
@@ -571,6 +588,53 @@ namespace NSHG.Applications
                 {
                     if (l.LeaseStartTick + l.LeaseLength < tick && l.LeaseLength != 0) Leases.Remove(l.ciaddr);
                 }
+            }
+        }
+        public override void Command(string commandstring)
+        {
+            Log.Add(commandstring);
+            string[] command = commandstring.Split(' ');
+            switch (command[0].ToLower())
+            {
+                case "echo":
+                    if (command.Length > 1)
+                    {
+                        switch (command[1].ToLower())
+                        {
+                            case "all":
+                                Log.Add("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
+                                Log.Add("Gateway IP Address " + GatewayIP?.ToString());
+                                Log.Add("DNS IP Address " + DNS?.ToString());
+                                Log.Add("Leases");
+                                foreach (Lease L in Leases.Values)
+                                {
+                                    Log.Add("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                }
+
+                                break;
+                            case "networkinterface":
+                                Log.Add("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
+                                break;
+                            case "gateway":
+                                Log.Add("Gateway IP Address " + GatewayIP?.ToString());
+                                break;
+                            case "dns":
+                                Log.Add("DNS IP Address " + DNS?.ToString());
+                                break;
+                            case "leases":
+                                Log.Add("Leases");
+                                foreach(Lease L in Leases.Values)
+                                {
+                                    Log.Add("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                }
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        Log.Add("Please Specify what you would like to echo");
+                    }
+                    break;
             }
         }
     }

@@ -5,7 +5,7 @@ using System.Xml;
 
 namespace NSHG.NetworkInterfaces
 {
-        public abstract class NetworkInterface
+    public abstract class NetworkInterface
     {
         public string Name { get; set; }
         public uint sysID;
@@ -64,13 +64,13 @@ namespace NSHG.NetworkInterfaces
 
         public event Action<byte[],NetworkInterface> OnRecievedPacket;
 
-        protected void CallOnRecievedPacket(byte[] Data, NetworkInterface NetInterface)
-        {
-            OnRecievedPacket.Invoke(Data, NetInterface);
-        }
+        public Action<string> Log;
 
-        protected NetworkInterface(MAC MACAddress, uint SysID)
+
+        protected NetworkInterface(MAC MACAddress, uint SysID, Action<string> Log = null)
         {
+            this.Log = Log ?? Console.WriteLine;
+
             MyMACAddress = MACAddress;
             this.sysID = SysID;
 
@@ -81,10 +81,13 @@ namespace NSHG.NetworkInterfaces
             RecieveQueue = new Queue<byte[]>();
 
         }
-        
-        public abstract XmlNode ToXML(XmlDocument doc);
 
-        public abstract bool Connect(NetworkInterface a);
+        public abstract bool isConnectedTo(uint id);
+        
+        protected void CallOnRecievedPacket(byte[] Data, NetworkInterface NetInterface)
+        {
+            OnRecievedPacket.Invoke(Data, NetInterface);
+        }
 
         public abstract void Reset();
 
@@ -99,6 +102,9 @@ namespace NSHG.NetworkInterfaces
         }
 
         public abstract void Tick(uint tick);
+
+        public abstract XmlNode ToXML(XmlDocument doc);
+        public abstract bool Connect(NetworkInterface a);
     }
 
     public class Adapter : NetworkInterface
@@ -106,9 +112,9 @@ namespace NSHG.NetworkInterfaces
         public IP DefaultGateway;
         public IP DNS;
         public NetworkInterface OtherEnd;
-        public uint OtherendID;
+        public uint OtherEndID;
         
-        public Adapter(MAC MACAddress, uint sysID, string name = "", IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false) : base(MACAddress, sysID)
+        public Adapter(MAC MACAddress, uint sysID, string name = "", IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false, Action<string> Log = null) : base(MACAddress, sysID, Log: Log)
         {
             Name = name;
             if (Connected)
@@ -117,7 +123,7 @@ namespace NSHG.NetworkInterfaces
                 this.SubnetMask = SubnetMask;
                 this.DefaultGateway = DefaultGateway;
                 this.DNS = DNS;
-                this.OtherendID = OtherendID;
+                this.OtherEndID = OtherendID;
                 _Connected = true;
             }
             else
@@ -126,8 +132,13 @@ namespace NSHG.NetworkInterfaces
             }
             Associated = false;
         }
-        
-        public static Adapter FromXML(XmlNode Parent)
+
+        public override bool isConnectedTo(uint id)
+        {
+            return (OtherEndID == id);
+        }
+
+        public static Adapter FromXML(XmlNode Parent, Action<string> Log = null)
         {
             string Name = null;
             uint sysID = 0;
@@ -251,7 +262,7 @@ namespace NSHG.NetworkInterfaces
                 throw new ArgumentException("MacAddress or SYSID not provided");
             }
 
-            Adapter a = new Adapter(MacAddress, sysID, Name, LocalIP, SubnetMask, DefaultGateway, DNS, OtherEndid, Connected);
+            Adapter a = new Adapter(MacAddress, sysID, Name, LocalIP, SubnetMask, DefaultGateway, DNS, OtherEndid, Connected, Log: Log);
             return a;
         }
 
@@ -300,7 +311,7 @@ namespace NSHG.NetworkInterfaces
             }
 
             XmlNode OtherEndNode = doc.CreateElement("ConnectedSystem");
-            OtherEndNode.InnerText = this.OtherendID.ToString();
+            OtherEndNode.InnerText = this.OtherEndID.ToString();
             parent.AppendChild(OtherEndNode);
 
             XmlNode ConnectedNode = doc.CreateElement("Connected");
@@ -379,7 +390,7 @@ namespace NSHG.NetworkInterfaces
             else if (!DNS.Equals(a.DNS)) return false;
             
 
-            if ((Name == a.Name)&&(OtherendID == a.OtherendID)&&(Connected == a.Connected)&&(Associated == a.Associated))
+            if ((Name == a.Name)&&(OtherEndID == a.OtherEndID)&&(Connected == a.Connected)&&(Associated == a.Associated))
             {
                 return true;
             }
@@ -396,6 +407,7 @@ namespace NSHG.NetworkInterfaces
             if (SendQueue.Count != 0)
             {
                 OtherEnd.RecievePacket(SendQueue.Dequeue());
+                Log("Paket sent from" + sysID + "to" + OtherEnd.sysID);
             }
             if (RecieveQueue.Count != 0)
             {
@@ -409,7 +421,7 @@ namespace NSHG.NetworkInterfaces
         List<uint> OtherEndIDs;
         SortedList<uint, NetworkInterface> OtherEnds;
 
-        public GroupAdapter(MAC MACAddress, uint SysID, string name = "", IP LocalIP = null, IP SubnetMask = null, List<uint> OtherEndIDs = null, bool Connected = false):base(MACAddress, SysID)
+        public GroupAdapter(MAC MACAddress, uint SysID, string name = "", IP LocalIP = null, IP SubnetMask = null, List<uint> OtherEndIDs = null, bool Connected = false, Action<string> Log = null):base(MACAddress, SysID, Log: Log)
         {
             Name = name;
             if (Connected)
@@ -431,6 +443,12 @@ namespace NSHG.NetworkInterfaces
                 _Connected = false;
             }
             Associated = false;
+        }
+
+
+        public override bool isConnectedTo(uint id)
+        {
+            return OtherEndIDs.Contains(id);
         }
 
         public override XmlNode ToXML(XmlDocument doc)
@@ -480,7 +498,7 @@ namespace NSHG.NetworkInterfaces
             return parent;
         }
 
-        public static GroupAdapter FromXML(XmlNode Parent)
+        public static GroupAdapter FromXML(XmlNode Parent, Action<string> Log = null)
         {
             string Name = null;
             uint sysID = 0;
@@ -579,7 +597,7 @@ namespace NSHG.NetworkInterfaces
                 throw new ArgumentException("MacAddress or SYSID not provided");
             }
 
-            GroupAdapter a = new GroupAdapter(MacAddress, sysID, Name, LocalIP, SubnetMask, OtherEndids, Connected);
+            GroupAdapter a = new GroupAdapter(MacAddress, sysID, Name, LocalIP, SubnetMask, OtherEndids, Connected, Log: Log);
             return a;
         }
 
@@ -618,13 +636,17 @@ namespace NSHG.NetworkInterfaces
         {
             if (SendQueue.Count != 0)
             {
-                foreach(NetworkInterface n in OtherEnds.Values) n.RecievePacket(SendQueue.Dequeue());
+                foreach (NetworkInterface n in OtherEnds.Values)
+                {
+                    n.RecievePacket(SendQueue.Dequeue());
+                    Log("Paket sent from" + sysID + "to" + n.sysID);
+                }
+
             }
             if (RecieveQueue.Count != 0)
             {
                 CallOnRecievedPacket(RecieveQueue.Dequeue(), this);
             }
         }
-
     }
 }

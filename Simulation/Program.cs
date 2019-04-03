@@ -68,7 +68,7 @@ namespace Simulation
             //foreach(Application app in s.Apps)Console.WriteLine(app.GetType());
 
             Network n = Network.LoadNetwork("sys1.xml", Console.WriteLine);
-            Console.WriteLine(n.SaveNetwork("sys2.xml", Console.WriteLine));
+            Console.WriteLine(n.SaveNetwork("sys2.xml", Console.WriteLine)); 
 
 
             Console.ReadKey();

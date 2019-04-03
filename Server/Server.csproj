@@ -101,10 +101,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="sys1.xml">
+    <Content Include="sys1.xml">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
