@@ -38,6 +38,17 @@ namespace XUnitTests
 
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public void ToBytesAndBack1()
+        {
+            IPv4Header ipv41 = new IPv4Header(1, false, false, 30, IPv4Header.ProtocolType.UDP, IP.Zero, IP.Broadcast, new byte[0], new byte[4]);
+            byte[] Bytes = ipv41.ToBytes();
+            IPv4Header ipv42 = new IPv4Header(Bytes);
+
+            Assert.True(ipv41.Equals(ipv42));
+
+        }
     }
 }
     

@@ -69,11 +69,11 @@ namespace NSHG.Applications
                         switch ((DHCPOption.MsgType)o.data[0])
                         {
                             case DHCPOption.MsgType.DHCPACK:
-                                Client.Log.Add(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
+                                Client.Log(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
                                 RequestResponce = d;
                                 break;
                             case DHCPOption.MsgType.DHCPNAK:
-                                Client.Log.Add(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
+                                Client.Log(a.Name + "Request Ackgnolaged and lease of" + d.yiaddr.ToString() + " gained");
                                 RequestResponce = d;
                                 break;
                             case DHCPOption.MsgType.DHCPOFFER:
@@ -117,7 +117,7 @@ namespace NSHG.Applications
                             // Send IPv4 Packet
                             a.SendPacket(IPv4.ToBytes());
 
-                            T3 = 500;
+                            T3 = 100;
                         }
                         break;
                     case State.SELECTING:
@@ -386,7 +386,7 @@ namespace NSHG.Applications
             {
                 return;
             }
-            Log.Add("Adding new session on adapter " + a.Name + " " + a.MyMACAddress.ToString());
+            Log("Adding new session on adapter " + a.Name + " " + a.MyMACAddress.ToString());
             session s = new session(a, this);
             sessions.Add(s.xid, s);
         }
@@ -533,17 +533,17 @@ namespace NSHG.Applications
                                 switch ((DHCPOption.MsgType)o.data[0])
                                 {
                                     case DHCPOption.MsgType.DHCPDISCOVER:
-                                        Log.Add("DHCPDescover recieved from " + dHCP.chaddr.ToString());
+                                        Log("DHCPDescover recieved from " + dHCP.chaddr.ToString());
                                         newdHCP.yiaddr = NewAddress(dHCP.chaddr);
                                         if (newdHCP == null) break;
                                         ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPOFFER }));
 
-                                        Log.Add("Offered IP " + newdHCP.yiaddr + " to " + newdHCP.chaddr);
+                                        Log("Offered IP " + newdHCP.yiaddr + " to " + newdHCP.chaddr);
                                         break;
                                     case DHCPOption.MsgType.DHCPREQUEST:
                                         IP Request = new IP(dHCP.options.Find(match => match.tag == Tag.addressRequest).data,0);
 
-                                        Log.Add("DHCPRequest recieved from " + dHCP.chaddr.ToString());
+                                        Log("DHCPRequest recieved from " + dHCP.chaddr.ToString());
 
                                         if (isAvailable(Request, dHCP.chaddr))
                                         {
@@ -554,12 +554,12 @@ namespace NSHG.Applications
                                             Lease l = new Lease(Request, dHCP.chaddr, currenttick, (uint)r.Next(1200, 1800));
                                             Leases.Add(l.ciaddr, l);
                                             ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
-                                            Log.Add("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
+                                            Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
                                         }
                                         else
                                         {
                                             ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPNAK }));
-                                            Log.Add("denied lease of " + Request + " to " + dHCP.chaddr);
+                                            Log("denied lease of " + Request + " to " + dHCP.chaddr);
                                         }
                                             
                                         break;
@@ -581,6 +581,7 @@ namespace NSHG.Applications
         
         public override void OnTick(uint tick)
         {
+            Log("DHCP Server Ticked");
             currenttick++;
             if (tick % 5 == 0)
             {
@@ -592,7 +593,7 @@ namespace NSHG.Applications
         }
         public override void Command(string commandstring)
         {
-            Log.Add(commandstring);
+            Log(commandstring);
             string[] command = commandstring.Split(' ');
             switch (command[0].ToLower())
             {
@@ -602,37 +603,37 @@ namespace NSHG.Applications
                         switch (command[1].ToLower())
                         {
                             case "all":
-                                Log.Add("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
-                                Log.Add("Gateway IP Address " + GatewayIP?.ToString());
-                                Log.Add("DNS IP Address " + DNS?.ToString());
-                                Log.Add("Leases");
+                                Log("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
+                                Log("Gateway IP Address " + GatewayIP?.ToString());
+                                Log("DNS IP Address " + DNS?.ToString());
+                                Log("Leases");
                                 foreach (Lease L in Leases.Values)
                                 {
-                                    Log.Add("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
                                 }
 
                                 break;
                             case "networkinterface":
-                                Log.Add("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
+                                Log("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
                                 break;
                             case "gateway":
-                                Log.Add("Gateway IP Address " + GatewayIP?.ToString());
+                                Log("Gateway IP Address " + GatewayIP?.ToString());
                                 break;
                             case "dns":
-                                Log.Add("DNS IP Address " + DNS?.ToString());
+                                Log("DNS IP Address " + DNS?.ToString());
                                 break;
                             case "leases":
-                                Log.Add("Leases");
+                                Log("Leases");
                                 foreach(Lease L in Leases.Values)
                                 {
-                                    Log.Add("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
                                 }
                                 break;
                         }
                     }
                     else
                     {
-                        Log.Add("Please Specify what you would like to echo");
+                        Log("Please Specify what you would like to echo");
                     }
                     break;
             }

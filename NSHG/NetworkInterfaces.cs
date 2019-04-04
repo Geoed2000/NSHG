@@ -86,7 +86,7 @@ namespace NSHG.NetworkInterfaces
         
         protected void CallOnRecievedPacket(byte[] Data, NetworkInterface NetInterface)
         {
-            OnRecievedPacket.Invoke(Data, NetInterface);
+            OnRecievedPacket?.Invoke(Data, NetInterface);
         }
 
         public abstract void Reset();

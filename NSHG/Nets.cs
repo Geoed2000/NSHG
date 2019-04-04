@@ -20,9 +20,9 @@ namespace NSHG
         }
 
         public IP(Byte[] Array, int StartIndex )
-        {
+        { 
             ArraySegment<Byte> IPAddress = new ArraySegment<byte>(Array, StartIndex, 4);
-            Ip = IPAddress.Array;
+            Ip = new List<byte>(IPAddress).ToArray();
         }
 
         public static IP Parse(string IPAddress)
@@ -148,6 +148,15 @@ namespace NSHG
         public static IP operator ++(IP ip1)
         {
             return new IP(BitConverter.GetBytes((BitConverter.ToInt32(ip1.Ip,0)+1)));
+        }
+        public static IP operator ~(IP ip1)
+        {
+            byte[] bytes = new byte[4];
+            for (int i = 0; i < 4; i++)
+            {
+                bytes[i] = (byte)(~ip1.Ip[i]);
+            }
+            return new IP(bytes);
         }
 
         public Byte[] ToBytes()

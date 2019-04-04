@@ -53,7 +53,7 @@ namespace NSHG.Protocols.UDP
             bytes.AddRange(BitConverter.GetBytes(Length));
             bytes.AddRange(BitConverter.GetBytes(0b0000000000000000));
 
-            return bytes.ToArray();
+            return bytes.ToArray(); 
         }
 
         public override byte[] ToBytes()

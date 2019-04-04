@@ -6,7 +6,6 @@ namespace XUnitTests
 {
     public class IPTests
     {
-       
 
         public class EqualsTests
         {

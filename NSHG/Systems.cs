@@ -27,17 +27,18 @@ namespace NSHG
         public event Action<IPv4Header, UDPHeader, UInt16, NetworkInterface> OnUDPPacket;
 
 
-        public System(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces = null, bool Respondtoecho = true, int maxapps = 10, bool initapps = true, Action<string> log = null)
+        public System(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces = null, bool Respondtoecho = true, int maxapps = 10, bool initapps = true, Action<string> Log = null)
         {
             LocalLog = new List<string>();
             
-            Log += log ?? Console.WriteLine;
-            Log += new Action<string>(s => { LocalLog.Add(s); });
+            this.Log += Log ?? Console.WriteLine;
+            this.Log += new Action<string>(s => { LocalLog.Add(s); });
 
             this.ID = ID;
             if (NetworkInterfaces != null)
             {
                 this.NetworkInterfaces = NetworkInterfaces;
+                foreach (NetworkInterface n in NetworkInterfaces.Values) n.OnRecievedPacket += Packet;
             }
             else
             {
@@ -67,19 +68,19 @@ namespace NSHG
         }
         public void Packet(byte[] datagram, NetworkInterface a)
         {
-            OnRecievedPacket.Invoke(datagram, a);
+            OnRecievedPacket?.Invoke(datagram, a);
             IPv4Header Data;
             try
             {
                 Data = new IPv4Header(datagram);
             }
-            catch
+            catch (Exception e)
             {
                 OnCorruptPacket.BeginInvoke(datagram, a, null, null);
                 return;
             }
             
-            if(Data.DestinationAddress == a.LocalIP)
+            if(Data.DestinationAddress == a.LocalIP || (Data.DestinationAddress  & ~a.SubnetMask) == (IP.Broadcast & ~a.SubnetMask))
             {
                 switch (Data.Protocol)
                 {
@@ -92,7 +93,7 @@ namespace NSHG
                         {
                             TCP = new TCPHeader(Data.Datagram);
                         }
-                        catch
+                        catch(Exception e)
                         {
                             OnCorruptPacket?.Invoke(datagram, a);
                             break;
@@ -106,7 +107,7 @@ namespace NSHG
                         {
                             UDP = new UDPHeader(Data.Datagram);
                         }
-                        catch
+                        catch(Exception e)
                         {
                             OnCorruptPacket?.Invoke(datagram, a);
                             break;
@@ -119,7 +120,8 @@ namespace NSHG
             }
             else
             {
-                OnNotForMe.Invoke(Data, a);
+                Log("Packet not for " + ID);
+                OnNotForMe?.Invoke(Data, a);
             }
         }
         protected virtual void handleICMPPacket(IPv4Header datagram, NetworkInterface a)
@@ -151,7 +153,10 @@ namespace NSHG
         private event Action<uint> OnTick;
 
         protected virtual void AppsInit()
-        { 
+        {
+            Log("Apps Init System");
+            DHCPClient c = new DHCPClient(this, new List<NetworkInterface>(NetworkInterfaces.Values));
+            AddApp(c);
             RoutingTable = new RoutingTable(this);
             AddApp(RoutingTable);
         } 
@@ -162,6 +167,8 @@ namespace NSHG
                 if (Apps[i] == null)
                 {
                     Apps[i] = app;
+                    Log("Adding app " + app.GetType() + "To " + ID);
+                    return true;
                 }
             }
             return false;
@@ -182,7 +189,7 @@ namespace NSHG
         {
             foreach (Application a in Apps)
             {
-                a.OnTick(tick);
+                a?.OnTick(tick);
             }
         }
 
@@ -298,7 +305,7 @@ namespace NSHG
                 throw new Exception("Invalid System XML ID not Specified");
             }
 
-            return new System(ID, NetworkInterfaces, respondToEcho);
+            return new System(ID, NetworkInterfaces, respondToEcho, Log: log);
 
 
         }
@@ -454,20 +461,21 @@ namespace NSHG
 
     public class Router : System
     {
-        public Router(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces, int maxapps = 10, bool RespToEcho = true) : base(ID, NetworkInterfaces, RespToEcho, maxapps, true)
+        public Router(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces, int maxapps = 10, bool RespToEcho = true, bool initapps = true, Action<string> Log = null) : base(ID, NetworkInterfaces, RespToEcho, maxapps, false, Log)
         {
-
+            if (initapps) AppsInit();
         }
 
         protected override void AppsInit()
         {
+            Log("Apps Init Router");
             foreach (NetworkInterface n in NetworkInterfaces.Values)
             {
+                Log(n.GetType().ToString());
                 if (n.GetType() == typeof(GroupAdapter))
                 {
                     DHCPServer s = new DHCPServer(this,n,n.LocalIP);
                     AddApp(s);
-
                 }
             }
 
@@ -494,7 +502,7 @@ namespace NSHG
 
             return parent;
         }
-        public new static Router FromXML(XmlNode Parent)
+        public static Router FromXML(XmlNode Parent, Action<string> log = null)
         {
             uint ID = 0;
             Dictionary<MAC, NetworkInterface> NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
@@ -557,7 +565,7 @@ namespace NSHG
                 throw new Exception("Invalid System XML ID not Specified");
             }
 
-            return new Router(ID, NetworkInterfaces, RespToEcho: respondToEcho);
+            return new Router(ID, NetworkInterfaces, RespToEcho: respondToEcho, Log: log);
 
 
         }

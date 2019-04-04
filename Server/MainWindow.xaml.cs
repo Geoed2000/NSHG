@@ -56,12 +56,7 @@ namespace Server
                 Log("tick " + tick);
             }
         }
-
-        private static void OnTimedEvent(Object source, ElapsedEventArgs e)
-        {
-            
-        }
-
+        
         public void Log(string log)
         {
             lock (LogLock)

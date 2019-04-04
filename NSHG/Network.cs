@@ -15,7 +15,7 @@ namespace NSHG
         public List<uint> UnallocatedPlayers;
         public List<MAC> TakenMacAddresses;
 
-        public Action<string> log;
+        public Action<string> Log;
 
         public static Network NewNet(Action<string> log = null)
         {
@@ -27,8 +27,8 @@ namespace NSHG
             n.UnallocatedPlayers = new List<uint>();
             n.TakenMacAddresses = new List<MAC>();
 
-            if (log == null) log = Console.WriteLine;
-            n.log = log;
+            
+            n.Log = log ?? Console.WriteLine;
 
             return n;
         }
@@ -79,6 +79,7 @@ namespace NSHG
         public static Network LoadNetwork(string filepath, Action<String> log = null)
         {
             Network network = NewNet(log);
+            Action<string> Log = log ?? Console.WriteLine;
             
             
             XmlDocument doc = new XmlDocument();
@@ -95,11 +96,12 @@ namespace NSHG
                     case "system":
                         try
                         {
-                            sys = NSHG.System.FromXML(node, log);
+                            sys = NSHG.System.FromXML(node, Log);
                         }
-                        catch
+                        catch(Exception e)
                         {
-                            log("Reading System Failed");
+                            Log("Reading System Failed");
+                            Log(e.ToString());
                             break;
                         }
                         try
@@ -109,21 +111,24 @@ namespace NSHG
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
-                            log("Added System \n    ID:" + sys.ID);
+                            Log("Added System \n    ID:" + sys.ID);
                         }
-                        catch
+                        catch(Exception e)
                         {
-                            log("failed adding system to network");
+                            Log("failed adding system to network");
+                            Log(e.ToString());
                         }
                         break;
                     case "router":
                         try
                         {
-                            sys = NSHG.Router.FromXML(node, log);
+                            sys = NSHG.Router.FromXML(node, Log);
                         }
-                        catch
+                        catch(Exception e)
                         {
-                            log("Reading Router Failed");
+
+                            Log("Reading Router Failed");
+                            Log(e.ToString());
                             break;
                         }
                         try
@@ -133,21 +138,22 @@ namespace NSHG
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
-                            log("Added Router \n    ID:" + sys.ID);
+                            Log("Added Router \n    ID:" + sys.ID);
                         }
-                        catch
+                        catch(Exception e)
                         {
-                            log("failed adding Router to network");
+                            Log("failed adding Router to network");
+                            Log(e.ToString());
                         }
                         break;
                     case "pc":
                         try
                         {
-                            sys = NSHG.System.FromXML(node, log);
+                            sys = NSHG.System.FromXML(node, Log);
                         }
                         catch
                         {
-                            log("Reading System Failed");
+                            Log("Reading System Failed");
                             break;
                         }
                         try
@@ -157,11 +163,11 @@ namespace NSHG
                             {
                                 network.TakenMacAddresses.Add(a.MyMACAddress);
                             }
-                            log("Added System \n    ID:" + sys.ID);
+                            Log("Added System \n    ID:" + sys.ID);
                         }
                         catch
                         {
-                            log("failed adding system to network");
+                            Log("failed adding system to network");
                         }
                         break;
 
@@ -172,17 +178,17 @@ namespace NSHG
                         if (network.Connect(node))
                         {
                             //success
-                            log("Addedd connection\n    " + node.InnerText);
+                            Log("Addedd connection\n    " + node.InnerText);
                         }
                         else
                         {
                             //failure
-                            log("Failed to add connection\n    "+node.InnerText);
+                            Log("Failed to add connection\n    "+node.InnerText);
                         }
                         break;
 
                     default:
-                        log("Invalid Identifier " + s);
+                        Log("Invalid Identifier " + s);
                         break;
                 }
             }

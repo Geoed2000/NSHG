@@ -16,13 +16,29 @@ namespace NSHG.Applications
             public uint Metric;
         }
 
+        // used to sort the entries in a sorted list and allow duplicate keys.
+        public class DuplicateKeyComparer<TKey> : IComparer<TKey> where TKey : IComparable
+        {
+            public int Compare(TKey x, TKey y)
+            {
+                int result = x.CompareTo(y);
+
+                if (result == 0)
+                    return 1;   // Handle equality as beeing greater
+                else
+                    return result;
+            }
+        }
+
         public SortedList<uint, Entry> Entries;
         public SortedList<uint, Entry> StaticEntries;
         protected System sys;
 
         public RoutingTable(System s)
         {
-            Entries = new SortedList<uint, Entry>();
+            Entries = new SortedList<uint, Entry>(new DuplicateKeyComparer<uint>());
+            StaticEntries = new SortedList<uint, Entry>(new DuplicateKeyComparer<uint>());
+            sys = s;
 
         }
 
@@ -65,11 +81,12 @@ namespace NSHG.Applications
         
         public SystemRoutingTable(System s) : base(s)
         {
-
+            GenerateTable();
         }
 
         private void GenerateTable()
         {
+            Entries = new SortedList<uint, Entry>(new DuplicateKeyComparer<uint>());
             foreach (NetworkInterface ni in sys.NetworkInterfaces.Values)
             {
                 if (ni.Connected)
@@ -111,10 +128,12 @@ namespace NSHG.Applications
                     }
                 }
             }
-
-            foreach (Entry e in StaticEntries.Values)
+            if (StaticEntries.Count != 0)
             {
-                Entries.Add(e.Metric, e);
+                foreach (Entry e in StaticEntries.Values)
+                {
+                    Entries.Add(e.Metric, e);
+                }
             }
         }
 

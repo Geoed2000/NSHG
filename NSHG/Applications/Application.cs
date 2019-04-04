@@ -6,12 +6,14 @@ namespace NSHG.Applications
 {
     public abstract class Application
     {
-        public List<string> Log;
+        public List<string> log;
+        public Action<string> Log;
 
-
-        public Application()
+        public Application(Action<string> Log = null)
         {
-            Log = new List<string>();
+            log = new List<string>();
+            this.Log += Log;
+            this.Log += log.Add;
         }
 
 
