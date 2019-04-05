@@ -9,7 +9,7 @@ namespace NSHG.Applications
 {
     public class DHCPClient : Application
     {
-        public class session
+        public class session 
         {
             public enum State
             {
@@ -581,9 +581,8 @@ namespace NSHG.Applications
         
         public override void OnTick(uint tick)
         {
-            Log("DHCP Server Ticked");
             currenttick++;
-            if (tick % 5 == 0)
+            if (tick % 10 == 0)
             {
                 foreach (Lease l in Leases.Values)
                 {

@@ -407,7 +407,7 @@ namespace NSHG.NetworkInterfaces
             if (SendQueue.Count != 0)
             {
                 OtherEnd.RecievePacket(SendQueue.Dequeue());
-                Log("Paket sent from" + sysID + "to" + OtherEnd.sysID);
+                Log("Packet sent from" + sysID + "to" + OtherEnd.sysID);
             }
             if (RecieveQueue.Count != 0)
             {
@@ -636,9 +636,10 @@ namespace NSHG.NetworkInterfaces
         {
             if (SendQueue.Count != 0)
             {
+                byte[] packet = SendQueue.Dequeue();
                 foreach (NetworkInterface n in OtherEnds.Values)
                 {
-                    n.RecievePacket(SendQueue.Dequeue());
+                    n.RecievePacket(packet);
                     Log("Paket sent from" + sysID + "to" + n.sysID);
                 }
 

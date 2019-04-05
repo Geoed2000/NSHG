@@ -63,17 +63,17 @@ namespace NSHG.Protocols.DHCP
             hlen = bytes[2];
             hops = bytes[3];
             xid = BitConverter.ToUInt32(bytes, 4);
-            secs = BitConverter.ToUInt16(bytes, 12);
-            flags = BitConverter.ToUInt16(bytes, 16);
-            ciaddr = new IP (bytes, 20);
-            yiaddr = new IP (bytes, 24);
-            siaddr = new IP (bytes, 28);
-            giaddr = new IP (bytes, 32);
-            chaddr = new MAC(bytes, 36);
-            bytes.CopyTo(sname, 42);
-            bytes.CopyTo(file, 100);
-            byte[] optionbytes = new byte[bytes.Length-228];
-            bytes.CopyTo(optionbytes, 228);
+            secs = BitConverter.ToUInt16(bytes, 8);
+            flags = BitConverter.ToUInt16(bytes, 10);
+            ciaddr = new IP (bytes, 12);
+            yiaddr = new IP (bytes, 16);
+            siaddr = new IP (bytes, 20);
+            giaddr = new IP (bytes, 24);
+            chaddr = new MAC(bytes, 28);
+            sname = new List<byte>(new ArraySegment<byte>(bytes, 34, 64)).ToArray();
+            file = new List<byte>(new ArraySegment<byte>(bytes, 98, 128)).ToArray();
+            byte[] optionbytes = new byte[bytes.Length-226];
+            optionbytes = new List<byte>(new ArraySegment<byte>(bytes, 226, bytes.Length - 226)).ToArray();
             options = new Optionlist(optionbytes);
 
         }
@@ -207,7 +207,7 @@ namespace NSHG.Protocols.DHCP
                 byte len = bytes[1];
                 byte[] data = new byte[len];
 
-                bytes.CopyTo(0, data, 0, len);
+                bytes.CopyTo(2, data, 0, len);
 
                 bytes.RemoveRange(0, len + 2);
                 Add(new DHCPOption(tag, data));

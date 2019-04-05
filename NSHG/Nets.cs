@@ -189,7 +189,7 @@ namespace NSHG
         public MAC(Byte[] Array, int StartIndex)
         {
             ArraySegment<Byte> MACAddress = new ArraySegment<byte>(Array, StartIndex, 6);
-            Mac = MACAddress.Array;
+            Mac = new List<byte>(MACAddress).ToArray();
         }
 
         public static MAC Parse(String MACAddress)

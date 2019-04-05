@@ -25,7 +25,6 @@ namespace NSHG.Protocols.UDP
                 return CalculateChecksum(bytes.ToArray());
             }
         }
-
         public byte[] Datagram;
 
         public UDPHeader(UInt16 SourcePort, UInt16 DestinationPort, byte[] Datagram)
@@ -40,9 +39,9 @@ namespace NSHG.Protocols.UDP
             SourcePort = BitConverter.ToUInt16(bytes, 0);
             DestinationPort = BitConverter.ToUInt16(bytes, 2);
             UInt16 len = BitConverter.ToUInt16(bytes, 4);
-            Datagram = new byte[len - 8];
-            bytes.CopyTo(Datagram, 8);
+            Datagram = new List<byte>(new ArraySegment<byte>(bytes, 8, len - 8)).ToArray();
             if (Checksum != BitConverter.ToUInt16(bytes, 6)) throw new Exception("Checksum is invalid");
+            
         }
 
         private byte[] _ToBytesNoChecksumNoDatagram()
@@ -51,7 +50,7 @@ namespace NSHG.Protocols.UDP
             bytes.AddRange(BitConverter.GetBytes(SourcePort));
             bytes.AddRange(BitConverter.GetBytes(DestinationPort));
             bytes.AddRange(BitConverter.GetBytes(Length));
-            bytes.AddRange(BitConverter.GetBytes(0b0000000000000000));
+            bytes.AddRange(BitConverter.GetBytes((UInt16)0b0000000000000000));
 
             return bytes.ToArray(); 
         }

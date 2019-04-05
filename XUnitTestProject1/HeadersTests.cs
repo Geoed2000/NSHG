@@ -2,6 +2,8 @@ using System;
 using Xunit;
 using NSHG;
 using NSHG.Protocols.IPv4;
+using NSHG.Protocols.UDP;
+using NSHG.Protocols.DHCP;
 
 namespace XUnitTests
 {
@@ -42,11 +44,26 @@ namespace XUnitTests
         [Fact]
         public void ToBytesAndBack1()
         {
-            IPv4Header ipv41 = new IPv4Header(1, false, false, 30, IPv4Header.ProtocolType.UDP, IP.Zero, IP.Broadcast, new byte[0], new byte[4]);
+            Optionlist ol = new Optionlist();
+            ol.Add(new DHCPOption(Tag.dhcpServerID, IP.Broadcast.ToBytes()));
+            ol.Add(new DHCPOption(Tag.router, IP.Broadcast.ToBytes()));
+            ol.Add(new DHCPOption(Tag.subnetmask, IP.Zero.ToBytes()));
+            ol.Add(new DHCPOption(Tag.domainserver, IP.Broadcast.ToBytes()));
+
+
+
+
+            DHCPDatagram DHCP1 = new DHCPDatagram(1, 78974564, 1, 10, 0, 0, true, IP.Broadcast, null, null, null, MAC.Random(), ol);
+            UDPHeader UDP1 = new UDPHeader(100, 101, DHCP1.ToBytes());
+            IPv4Header ipv41 = new IPv4Header(1, false, false, 30, IPv4Header.ProtocolType.UDP, IP.Zero, IP.Broadcast, new byte[0],UDP1.ToBytes());
             byte[] Bytes = ipv41.ToBytes();
             IPv4Header ipv42 = new IPv4Header(Bytes);
+            UDPHeader UDP2 = new UDPHeader(ipv42.Datagram);
+            DHCPDatagram DHCP2 = new DHCPDatagram(UDP2.Datagram);
 
-            Assert.True(ipv41.Equals(ipv42));
+            Assert.Equal(ipv41.ToBytes(), ipv42.ToBytes());
+            Assert.Equal(UDP1.ToBytes(), UDP2.ToBytes());
+            Assert.Equal(DHCP1.ToBytes(), DHCP2.ToBytes());
 
         }
     }

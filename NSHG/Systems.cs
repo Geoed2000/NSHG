@@ -32,7 +32,7 @@ namespace NSHG
             LocalLog = new List<string>();
             
             this.Log += Log ?? Console.WriteLine;
-            this.Log += new Action<string>(s => { LocalLog.Add(s); });
+            this.Log += LocalLog.Add;
 
             this.ID = ID;
             if (NetworkInterfaces != null)
@@ -45,6 +45,9 @@ namespace NSHG
                 NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
             }
             this.respondToEcho = Respondtoecho;
+
+            OnCorruptPacket += (n, a) => { Log("Corrupt packet on " + ID); };
+
             OnTick += AdapterTick;
             OnTick += ApplicationTick;
             Apps = new Application[maxapps];
@@ -192,7 +195,6 @@ namespace NSHG
                 a?.OnTick(tick);
             }
         }
-
         public void Command(string CommandString)
         {
             LocalLog.Add(CommandString);
@@ -205,6 +207,94 @@ namespace NSHG
                         switch (Command[1].ToLower())
                         {
                             case "networkinterfaces":
+                                foreach (NetworkInterface n in NetworkInterfaces.Values)
+                                {
+                                    Log("Name:------- " + n.Name + "\n" +
+                                        "MacAddress:- " + n.MyMACAddress + "\n" +
+                                        "Local IP:--- " + n.LocalIP + "\n" +
+                                        "NetMask:---- " + n.SubnetMask + "\n" +
+                                        "Type Of:---- " + n.GetType());
+                                }
+                                break;
+                            case "apps":
+                            case "applications":
+                                for (int i = 0; i < Apps.Length; i++)
+                                {
+                                    if (Apps[i] != null)
+                                    {
+                                        Log("   Slot: " + i + "  Type: " + Apps[i].GetType());
+                                    }
+                                }
+                                break;
+                            case "app":
+                            case "application":
+                                if (Command.Length > 2)
+                                {
+                                    try
+                                    {
+                                        int id = int.Parse(Command[2]);
+                                        foreach(string s in Apps[id]?.log)
+                                        {
+                                            Log("   " + s);
+                                        }
+
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        Log("Error parsing Slot");
+                                    }
+                                    catch (OverflowException)
+                                    {
+                                        Log("Error, Slot too large, overflow");
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                        Log("Error, Slot to large, out of range");
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "as":
+                    if (Command.Length > 1)
+                    {
+                        switch (Command[1].ToLower())
+                        {
+                            case "app":
+                            case "application":
+                                if (Command.Length > 2)
+                                {
+                                    try
+                                    {
+                                        int id = int.Parse(Command[2]);
+
+                                        string newcommand = "";
+                                        for (int i = 3; i < Command.Length; i++)
+                                        {
+                                            newcommand += Command[i] + " ";
+                                        }
+                                        Apps[id]?.Command(newcommand);
+                                    }
+                                    catch (FormatException)
+                                    {
+                                        Log("Error parsing Slot");
+                                    }
+                                    catch (OverflowException)
+                                    {
+                                        Log("Error, Slot too large, overflow");
+                                    }
+                                    catch (IndexOutOfRangeException)
+                                    {
+                                        Log("Error, Slot to large, out of range");
+                                    }
+                                }
+                                else
+                                {
+                                    Log("Must specify a app to act as");
+                                }
+                                break;
+                            case "networkinterface":
 
                                 break;
                         }
