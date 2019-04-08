@@ -147,7 +147,19 @@ namespace NSHG
         }
         public static IP operator ++(IP ip1)
         {
-            return new IP(BitConverter.GetBytes((BitConverter.ToInt32(ip1.Ip,0)+1)));
+            for(int i = 0; i < 4; i++)
+            {
+                try
+                {
+                    ip1.Ip[i] += 1;
+                    break;
+                }
+                catch(OverflowException e)
+                {
+                    ip1.Ip[i] = 0;
+                }
+            }
+            return ip1;
         }
         public static IP operator ~(IP ip1)
         {

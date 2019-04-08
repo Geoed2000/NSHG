@@ -48,8 +48,8 @@ namespace NSHG.Applications
 
             IP offeredIP = null;
             IP DHCPServerIP = null;
-            
-            public session(Adapter a, Application client)
+
+            public session(Adapter a, Application client) : base()
             {
                 Client = client;
                 this.a = a;
@@ -103,7 +103,6 @@ namespace NSHG.Applications
                             // Requesting Spesific IP
                             if (a.LocalIP != null) ol.Add(new DHCPOption(Tag.addressRequest, a.LocalIP.ToBytes()));
                             // Asking for Spesific Params back
-                            
                             ol.Add(new DHCPOption(Tag.paramaterList, paramlist.ToArray()));
                             
                             // create DHCP Datagram
@@ -113,6 +112,8 @@ namespace NSHG.Applications
                             UDPHeader UDP = new UDPHeader(68, 67, DhcpDatagram.ToBytes());
                             IPv4Header IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero, IP.Broadcast, UDP.ToBytes(), 32);
                             state = State.SELECTING;
+
+                            Client.Log("Sending Discover Packet");
 
                             // Send IPv4 Packet
                             a.SendPacket(IPv4.ToBytes());
@@ -137,7 +138,7 @@ namespace NSHG.Applications
                                 {
                                     new DHCPOption(Tag.dhcpMsgType, new byte[1] { (byte)DHCPOption.MsgType.DHCPREQUEST }),
                                     new DHCPOption(Tag.addressRequest, offeredIP.ToBytes())
-                                };
+                                };  
 
                                 if (DHCPServerIP != null) ol.Add(new DHCPOption(Tag.dhcpServerID, DHCPServerIP.ToBytes()));
                                 
@@ -152,6 +153,7 @@ namespace NSHG.Applications
                                 IPv4Header IPv4 = IPv4Header.DefaultUDPWrapper(IP.Zero, server, UDP.ToBytes(), 32);
 
                                 a.SendPacket(IPv4.ToBytes());
+                                Client.Log("Sending Request Packet");
 
                                 state = State.REQUESTING;
                             }
@@ -172,6 +174,7 @@ namespace NSHG.Applications
                                     if (o.data[0] == (byte)DHCPOption.MsgType.DHCPNAK)
                                     {
                                         Offer = null;
+                                        RequestResponce = null;
                                         state = State.INIT;
                                         break;
                                     }else 
@@ -211,10 +214,10 @@ namespace NSHG.Applications
                         {
                             T1--;
                             Optionlist ol = new Optionlist()
-                                {
-                                    new DHCPOption(Tag.dhcpMsgType, new byte[1] { (byte)DHCPOption.MsgType.DHCPREQUEST }),
-                                    new DHCPOption(Tag.addressRequest, a.LocalIP.ToBytes())
-                                };
+                            {
+                                new DHCPOption(Tag.dhcpMsgType, new byte[1] { (byte)DHCPOption.MsgType.DHCPREQUEST }),
+                                new DHCPOption(Tag.addressRequest, a.LocalIP.ToBytes())
+                            };
 
                             if (DHCPServerIP != null) ol.Add(new DHCPOption(Tag.dhcpServerID, DHCPServerIP.ToBytes()));
 
@@ -487,7 +490,7 @@ namespace NSHG.Applications
             {
                 checking++;
 
-            } while (isAvailable(checking, client));
+            } while (!isAvailable(checking, client));
 
             if ((checking & SubnetMask) != (ThisIP & SubnetMask))
             {

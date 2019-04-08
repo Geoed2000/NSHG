@@ -46,7 +46,7 @@ namespace NSHG
             }
             this.respondToEcho = Respondtoecho;
 
-            OnCorruptPacket += (n, a) => { Log("Corrupt packet on " + ID); };
+            OnCorruptPacket += (n, a) => { Log("Corrupt packet on: " + ID); };
 
             OnTick += AdapterTick;
             OnTick += ApplicationTick;
@@ -123,7 +123,7 @@ namespace NSHG
             }
             else
             {
-                Log("Packet not for " + ID);
+                Log("Packet not for " + ID + " Addressed to: " + Data.DestinationAddress + " Recieved at:  " + a.LocalIP);
                 OnNotForMe?.Invoke(Data, a);
             }
         }
@@ -233,10 +233,14 @@ namespace NSHG
                                     try
                                     {
                                         int id = int.Parse(Command[2]);
-                                        foreach(string s in Apps[id]?.log)
+                                        if (Apps[id]?.log != null)
                                         {
-                                            Log("   " + s);
+                                            foreach (string s in Apps[id]?.log)
+                                            {
+                                                Log("   " + s);
+                                            }
                                         }
+                                        
 
                                     }
                                     catch (FormatException)

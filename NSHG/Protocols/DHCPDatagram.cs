@@ -66,9 +66,13 @@ namespace NSHG.Protocols.DHCP
             secs = BitConverter.ToUInt16(bytes, 8);
             flags = BitConverter.ToUInt16(bytes, 10);
             ciaddr = new IP (bytes, 12);
+            if (ciaddr == IP.Zero) ciaddr = null;
             yiaddr = new IP (bytes, 16);
+            if (yiaddr == IP.Zero) yiaddr = null;
             siaddr = new IP (bytes, 20);
+            if (siaddr == IP.Zero) siaddr = null;
             giaddr = new IP (bytes, 24);
+            if (giaddr == IP.Zero) giaddr = null;
             chaddr = new MAC(bytes, 28);
             sname = new List<byte>(new ArraySegment<byte>(bytes, 34, 64)).ToArray();
             file = new List<byte>(new ArraySegment<byte>(bytes, 98, 128)).ToArray();

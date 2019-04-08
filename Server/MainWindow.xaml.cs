@@ -27,6 +27,8 @@ namespace Server
         private Timer TickTimer = new Timer(200);
         public List<string> CommandLog = new List<string>();
         int upto = 0;
+        bool TickInProgress = false;
+        private object TIPLock = new object();
         public List<string> SystemLog = new List<string>();
         private object LogLock;
         string filepath = "";
@@ -39,7 +41,11 @@ namespace Server
         {
             LogLock = new object();
             TickTimer.Elapsed += Tick;  
+
+
             InitializeComponent();
+
+
             BrushConverter bc = new BrushConverter();
             Brush backgroudcol = (Brush)bc.ConvertFrom("#252526");
             backgroudcol.Freeze();
@@ -47,8 +53,8 @@ namespace Server
             backgroudcol.Freeze();
             Brush fontcol = (Brush)bc.ConvertFrom("#f1f1f1");
             fontcol.Freeze();
-            Grid.Background = backgroudcol;
 
+            Grid.Background = backgroudcol;
             LogBox.Foreground = fontcol;
             CommandsIn.Foreground = fontcol;
             CommandsIn.Background = foregroundcol;
@@ -56,7 +62,16 @@ namespace Server
 
         private void Tick(object source, ElapsedEventArgs e)
         {
-            tick += 1;
+            lock (TIPLock)
+            {
+                if (!TickInProgress)
+                {
+                    TickInProgress = true;
+                }
+                else return;
+            }
+            Log("Tick Start");
+            tick++;
             //Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
             //Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
             foreach (NSHG.System s in network.Systems.Values)
@@ -64,10 +79,16 @@ namespace Server
                 s.Tick(tick);
             }
             //Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
-            if (tick % 20 == 0)
+            if (tick % 10 == 0)
             {
                 Log("tick " + tick);
             }
+
+            lock (TIPLock)
+            {
+                TickInProgress = false;
+            }
+            Log("Tick fin");
         }
         
         public void Log(string log)
@@ -75,13 +96,13 @@ namespace Server
             lock (LogLock)
             {
                 SystemLog.Add(log);
+
+                Dispatcher.Invoke(new Action(delegate ()
+                {
+                    LogBox.Text += log + "\n";
+                    ScrollView.ScrollToBottom();
+                }));
             }
-            Dispatcher.BeginInvoke(new Action(delegate()
-            {
-                LogBox.Text += log + "\n";
-                ScrollView.ScrollToBottom();
-            }));
-            
         }
 
         private void Command(string command)
@@ -196,6 +217,20 @@ namespace Server
                         }
                     }
                     break;
+                case "tick":
+                    Tick(null,null);
+                    break;
+                case "tickrate":
+                    try
+                    {
+                        TickTimer.Interval = double.Parse(commandlist[1]);
+                    }
+                    catch (Exception e)
+                    {
+                        Log(e.ToString());
+                        
+                    }break;
+
             }
         }
 

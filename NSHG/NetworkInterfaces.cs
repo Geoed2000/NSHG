@@ -634,6 +634,7 @@ namespace NSHG.NetworkInterfaces
 
         public override void Tick(uint tick)
         {
+            Log("Group adapt.Tick");
             if (SendQueue.Count != 0)
             {
                 byte[] packet = SendQueue.Dequeue();
