@@ -114,6 +114,7 @@ namespace NSHG.NetworkInterfaces
         public NetworkInterface OtherEnd;
         public uint OtherEndID;
         
+
         public Adapter(MAC MACAddress, uint sysID, string name = "", IP LocalIP = null, IP SubnetMask = null, IP DefaultGateway = null, IP DNS = null, uint OtherendID = 0, bool Connected = false, Action<string> Log = null) : base(MACAddress, sysID, Log: Log)
         {
             Name = name;
@@ -132,6 +133,7 @@ namespace NSHG.NetworkInterfaces
             }
             Associated = false;
         }
+
 
         public override bool isConnectedTo(uint id)
         {
@@ -420,6 +422,7 @@ namespace NSHG.NetworkInterfaces
     {
         List<uint> OtherEndIDs;
         SortedList<uint, NetworkInterface> OtherEnds;
+
 
         public GroupAdapter(MAC MACAddress, uint SysID, string name = "", IP LocalIP = null, IP SubnetMask = null, List<uint> OtherEndIDs = null, bool Connected = false, Action<string> Log = null):base(MACAddress, SysID, Log: Log)
         {

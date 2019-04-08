@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NSHG
 {
-    public class IP
+    public class IP:IComparable, ICloneable
     {
         public static IP Loopback = new IP(new byte[4] { 127, 0, 0, 1});
 
@@ -147,11 +147,12 @@ namespace NSHG
         }
         public static IP operator ++(IP ip1)
         {
-            for(int i = 0; i < 4; i++)
+            for(int i = 3; i >= 0; i--)
             {
                 try
                 {
-                    ip1.Ip[i] += 1;
+                    ip1.Ip[i] = (byte)(ip1.Ip[i] + 1);
+                    if (ip1.Ip[i] == 0) throw new OverflowException();
                     break;
                 }
                 catch(OverflowException e)
@@ -169,6 +170,32 @@ namespace NSHG
                 bytes[i] = (byte)(~ip1.Ip[i]);
             }
             return new IP(bytes);
+        }
+
+        public int CompareTo(object o)
+        {
+            IP ComparedTo;
+            try
+            {
+                ComparedTo = (IP)o;
+            }catch(InvalidCastException ic)
+            {
+                return int.MaxValue;
+            }
+
+            for(int i = 0; i < 4; i++)
+            {
+                int comparedval = Ip[i].CompareTo(ComparedTo.Ip[i]);
+                if (comparedval != 0)
+                {
+                    return comparedval;
+                }
+            }
+            return 0;
+        }
+        public object Clone()
+        {
+            return new IP((byte[])Ip.Clone());
         }
 
         public Byte[] ToBytes()

@@ -457,7 +457,7 @@ namespace NSHG.Applications
         public SortedList<IP, Lease> Leases = new SortedList<IP, Lease>();
         public SortedList<IP, Lease> Reserved = new SortedList<IP, Lease>();
         
-        public uint currenttick = 0;
+        public uint currentTick = 0;
 
         public DHCPServer(System s, NetworkInterface a, IP Router) : base()
         {
@@ -478,25 +478,25 @@ namespace NSHG.Applications
             }
             if (Reserved.ContainsKey(ip))
             {
-                if (Reserved[ip].chaddr == client) return true;
+                if ((bool)Reserved[ip].chaddr?.Equals(client)) return true;
                 else return false;
             }
             else return true;
         }
         public IP NewAddress(MAC client)
         {
-            IP checking = new IP(ThisIP.ToBytes());
+            IP checking = new IP((byte[])ThisIP.ToBytes().Clone());
             do
             {
                 checking++;
 
-            } while (!isAvailable(checking, client));
+            } while (!isAvailable(checking, client) || (checking & SubnetMask) != (ThisIP & SubnetMask));
 
             if ((checking & SubnetMask) != (ThisIP & SubnetMask))
             {
                 return null;
             }
-            return checking;
+            return (IP)checking.Clone();
             
         }
         public void packet(IPv4Header ipv4, UDPHeader udp, UInt16 dest, NetworkInterface a)
@@ -537,12 +537,15 @@ namespace NSHG.Applications
                                 {
                                     case DHCPOption.MsgType.DHCPDISCOVER:
                                         Log("DHCPDescover recieved from " + dHCP.chaddr.ToString());
-                                        newdHCP.yiaddr = NewAddress(dHCP.chaddr);
                                         if (newdHCP == null) break;
+                                        newdHCP.yiaddr = NewAddress(dHCP.chaddr);
+                                        Reserved.Add(newdHCP.yiaddr, new Lease(newdHCP.yiaddr, dHCP.chaddr, currentTick, 100));
                                         ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPOFFER }));
 
                                         Log("Offered IP " + newdHCP.yiaddr + " to " + newdHCP.chaddr);
                                         break;
+
+
                                     case DHCPOption.MsgType.DHCPREQUEST:
                                         IP Request = new IP(dHCP.options.Find(match => match.tag == Tag.addressRequest).data,0);
 
@@ -554,7 +557,7 @@ namespace NSHG.Applications
                                                 Reserved.Remove(Request);
                                             if (Leases.ContainsKey(Request))
                                                 Leases.Remove(Request);
-                                            Lease l = new Lease(Request, dHCP.chaddr, currenttick, (uint)r.Next(1200, 1800));
+                                            Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(1200, 1800));
                                             Leases.Add(l.ciaddr, l);
                                             ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
                                             Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
@@ -564,7 +567,6 @@ namespace NSHG.Applications
                                             ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPNAK }));
                                             Log("denied lease of " + Request + " to " + dHCP.chaddr);
                                         }
-                                            
                                         break;
 
                                 }
@@ -575,16 +577,17 @@ namespace NSHG.Applications
                     UDPHeader newupd = new UDPHeader(67, 68, newdHCP.ToBytes());
                     IPv4Header newipv4 = IPv4Header.DefaultUDPWrapper(a.LocalIP, IP.Broadcast, newupd.ToBytes(), 32); 
                     a.SendPacket(newipv4.ToBytes());
+                    Log("Packet Sent");
                 }
-                catch
+                catch(Exception e)
                 {
-
+                    Log(e.ToString());
                 }
         }
         
         public override void OnTick(uint tick)
         {
-            currenttick++;
+            currentTick++;
             if (tick % 10 == 0)
             {
                 foreach (Lease l in Leases.Values)

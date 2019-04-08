@@ -60,6 +60,7 @@ namespace Server
             CommandsIn.Background = foregroundcol;
         }
 
+
         private void Tick(object source, ElapsedEventArgs e)
         {
             lock (TIPLock)
@@ -91,7 +92,7 @@ namespace Server
             Log("Tick fin");
         }
         
-        public void Log(string log)
+        public  void Log(string log)
         {
             lock (LogLock)
             {
