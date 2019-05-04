@@ -367,7 +367,7 @@ namespace NSHG.Applications
         SortedList<uint,session> sessions = new SortedList<uint,session>();
 
 
-        public DHCPClient(System s, List<NetworkInterface> adapters) : base()
+        public DHCPClient(System s, List<NetworkInterface> adapters, Action<string> Log = null) : base(Log)
         {
             s.OnUDPPacket += (packet);
             foreach (Adapter a in adapters)
@@ -459,7 +459,7 @@ namespace NSHG.Applications
         
         public uint currentTick = 0;
 
-        public DHCPServer(System s, NetworkInterface a, IP Router) : base()
+        public DHCPServer(System s, NetworkInterface a, IP Router, Action<string> Log = null) : base(Log)
         {
             GatewayIP = Router;
             SubnetMask = a.SubnetMask;

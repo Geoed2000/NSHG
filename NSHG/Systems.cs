@@ -16,7 +16,8 @@ namespace NSHG
         public Dictionary<MAC,NetworkInterface> NetworkInterfaces;        
         public bool respondToEcho;
 
-        public List<String> LocalLog;
+        public List<String> Locallog;
+        public Action<string> LocalLog;
         public Action<string> Log;
 
         public event Action<Byte[],NetworkInterface> OnRecievedPacket;
@@ -29,10 +30,11 @@ namespace NSHG
 
         public System(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces = null, bool Respondtoecho = true, int maxapps = 10, bool initapps = true, Action<string> Log = null)
         {
-            LocalLog = new List<string>();
+            Locallog = new List<string>();
             
             this.Log += Log ?? Console.WriteLine;
-            this.Log += LocalLog.Add;
+            this.LocalLog += Locallog.Add;
+            this.Log += LocalLog;
 
             this.ID = ID;
             if (NetworkInterfaces != null)
@@ -170,7 +172,8 @@ namespace NSHG
                 if (Apps[i] == null)
                 {
                     Apps[i] = app;
-                    Log("Adding app " + app.GetType() + "To " + ID);
+                    app.Log += s => LocalLog(i + "> " + s);
+                    Log("Adding app " + app.GetType() + " To " + ID);
                     return true;
                 }
             }
@@ -197,7 +200,7 @@ namespace NSHG
         }
         public void Command(string CommandString)
         {
-            LocalLog.Add(CommandString);
+            Locallog.Add(CommandString);
             string[] Command = CommandString.Split(' ');
             switch (Command[0].ToLower())
             {

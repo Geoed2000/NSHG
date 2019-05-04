@@ -1,0 +1,31 @@
+﻿<Page x:Class="Client.LoginScreen"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Client"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="LoginScreen">
+
+    <Grid Background="White" Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="4*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Label  Grid.Column="0" Grid.Row="0" Margin="1" x:Name="UsernameLabel">Username</Label>
+        <TextBox Grid.Column="1" Grid.Row="0" Margin="1" x:Name="UsernameIn"/>
+        <Label  Grid.Column="0" Grid.Row="1" Margin="1" x:Name="PasswordLabel">Password</Label>
+        <TextBox Grid.Column="1" Grid.Row="1" Margin="1" x:Name="PasswordIn"/>
+        <StackPanel Grid.Column="0" Grid.Row="2">
+            <Button Margin="1" x:Name="ConnectButton" Click="ConnectButton_Click">Re Connect</Button>
+            <Button Margin="1" x:Name="NewUserButton" Click="NewUserButton_Click">New User</Button>
+        </StackPanel>
+        <Label Grid.Column="1" Grid.Row="2" Margin="1" x:Name="OutLabel"/>
+    </Grid>
+</Page>

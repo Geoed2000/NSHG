@@ -15,8 +15,7 @@ namespace NSHG.Applications
             this.Log += Log;
             this.Log += log.Add;
         }
-
-
+        
         public abstract void OnTick(uint tick);
         public abstract void Command(string commandstring);
     }

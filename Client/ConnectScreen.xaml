@@ -1,0 +1,33 @@
+﻿<Page x:Class="Client.ConnectScreen"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Client"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="Connect_Screen">
+
+    <Grid Background="White" Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="6*"/>
+        </Grid.ColumnDefinitions>
+        <Label>IP Address</Label>
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+            <TextBox x:Name="Byte1" TextChanged="Byte_TextChanged" Width="30"/>
+            <Label>.</Label>
+            <TextBox x:Name="Byte2" TextChanged="Byte_TextChanged" Width="30"/>
+            <Label>.</Label>
+            <TextBox x:Name="Byte3" TextChanged="Byte_TextChanged" Width="30"/>
+            <Label>.</Label>
+            <TextBox x:Name="Byte4" TextChanged="Byte_TextChanged" Width="30"/>
+        </StackPanel>
+        <Button x:Name="ConnectButton" Grid.Row="1" Margin="3" Content="Connect" Click="ConnectButton_Click"/>
+        <Label x:Name="OutLabel" Grid.Row="1" Grid.Column="1"/>
+    </Grid>
+</Page>

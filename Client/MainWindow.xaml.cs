@@ -23,6 +23,7 @@ namespace Client
         public MainWindow()
         {
             InitializeComponent();
+            MainFrame.Content = new ConnectScreen(this);
         }
     }
 }

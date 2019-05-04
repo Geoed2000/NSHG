@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 using System.Timers;
 using NSHG;
 using NSHG.Protocols.IPv4;
+using System.Net;
+using System.Net.Sockets;
 
 
 namespace Server
@@ -32,9 +34,11 @@ namespace Server
         public List<string> SystemLog = new List<string>();
         private object LogLock;
         string filepath = "";
-        Network network = new Network();
+        Network network;
         bool networkloaded = false;
         uint tick = 0;
+
+        Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
 
         public MainWindow()
@@ -92,7 +96,7 @@ namespace Server
             Log("Tick fin");
         }
         
-        public  void Log(string log)
+        public void Log(string log)
         {
             lock (LogLock)
             {
@@ -108,12 +112,7 @@ namespace Server
 
         private void Command(string command)
         {
-            command = command.Trim();
-
-            CommandsIn.Text = "";
-            Log("=> " + command);
-            CommandLog.Add(command);
-            upto = CommandLog.Count;
+            
 
             string[] commandlist = command.Split(' ');
             string tmpfilepath;
@@ -191,31 +190,9 @@ namespace Server
                     }
                     else
                     {
-                        if(commandlist.Length > 1)
-                        {
-                            try
-                            {
-                                uint id = uint.Parse(commandlist[1]);
-                                string newcommand = "";
-                                for (int i = 2; i < commandlist.Length; i++)
-                                {
-                                    newcommand += commandlist[i] + " ";
-                                }
-                                network.Systems[id].Command(newcommand.Trim(' '));
-                            }
-                            catch (FormatException e)
-                            {
-                                Log("Error parsing ID");
-                            }
-                            catch (OverflowException e)
-                            {
-                                Log("Error, ID too large");
-                            }
-                        }
-                        else
-                        {
-                            Log("Must specify a system to act as");
-                        }
+                        List<string> NetworkCommandList = new List<string>(commandlist);   
+                        NetworkCommandList.RemoveAt(0);
+                        network.Command(NetworkCommandList.ToArray(), Log);
                     }
                     break;
                 case "tick":
@@ -245,6 +222,12 @@ namespace Server
             if (e.Key == Key.Enter||e.Key == Key.Return)
             {
                 string command = CommandsIn.Text;
+                command = command.Trim();
+
+                CommandsIn.Text = "";
+                Log("=> " + command);
+                CommandLog.Add(command);
+                upto = CommandLog.Count;
                 Command(command);
             }
             else if (e.Key == Key.Up)

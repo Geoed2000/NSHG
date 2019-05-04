@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using NSHG.NetworkInterfaces;
+using System.Net;
+using System.Net.Sockets;
+using System.Linq;
+
 
 namespace NSHG
 {
@@ -10,27 +14,296 @@ namespace NSHG
     {
         public Dictionary<uint, System> Systems;
         public List<Tuple<uint, uint>> Connections;
-        public List<uint> OnlinePlayers;
-        public List<uint> OfflinePlayers;
+        public List<Tuple<UInt64, string>> Flags;
+        public DateTime starttime;
         public List<uint> UnallocatedPlayers;
         public List<MAC> TakenMacAddresses;
 
+        public Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        public List<Socket> ClientSockets;
+        public const int buffersize = 2048;
+        public const int port = 100;
+        private static readonly byte[] buffer = new byte[buffersize];
+        public List<User> users;
+
         public Action<string> Log;
 
-        public static Network NewNet(Action<string> log = null)
+        public class User
         {
-            Network n = new Network();
-            n.Systems = new Dictionary<uint, System>();
-            n.Connections = new List<Tuple<uint, uint>>();
-            n.OnlinePlayers = new List<uint>();
-            n.OfflinePlayers = new List<uint>();
-            n.UnallocatedPlayers = new List<uint>();
-            n.TakenMacAddresses = new List<MAC>();
+            public readonly string Username;
+            public readonly uint Password;
+            public readonly uint SysID;
+            public Socket Socket;
+            public byte[] Recievebuffer;
+            public List<byte[]> packetsnotsent;
+            public List<Tuple<UInt64, TimeSpan>> flags;
+
+            public User(string username, uint passsword, uint sysID)
+            {
+                Username = "";
+                Password = 0;
+                SysID = 0;
+                Socket = null;
+                Recievebuffer = new byte[buffersize];
+                packetsnotsent = new List<byte[]>();
+                flags = new List<Tuple<UInt64, TimeSpan>>();
+            }
+
+            public void Send(string s)
+            {
+                byte[] data = ASCIIEncoding.ASCII.GetBytes(s);
+                try
+                {
+                    Socket.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+
+                }catch(SocketException e)
+                {
+                    packetsnotsent.Add(data);
+                    Socket.Close();
+                }
+            }
+            public bool Connect(Socket s)
+            {
+                if (Socket == null)
+                {
+                    Socket = s;
+                    return true;
+                }else if (Socket.Connected == false)
+                {
+                    Socket = s;
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public Network(Action<string> log = null)
+        {
+            
+            Systems = new Dictionary<uint, System>();
+            Connections = new List<Tuple<uint, uint>>();
+            Flags = new List<Tuple<ulong, string>>();
+            users = new List<User>();
+            UnallocatedPlayers = new List<uint>();
+            TakenMacAddresses = new List<MAC>();
 
             
-            n.Log = log ?? Console.WriteLine;
+            Log = log ?? Console.WriteLine;
+            
+        }
 
-            return n;
+        public void Setupserver()
+        {
+            Log("Setting up server");
+            ServerSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+            ServerSocket.Listen(0);
+            ServerSocket.BeginAccept(AcceptCallback, null);
+            Log("Server setup complete");
+        }
+        public void AcceptCallback(IAsyncResult asyncResult)
+        {
+            Socket socket;
+
+            socket = ServerSocket.EndAccept(asyncResult);
+
+            ClientSockets.Add(socket);
+            socket.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, socket);
+            Log("Client connected on IP " + ((IPEndPoint)socket.RemoteEndPoint).Address);
+            ServerSocket.BeginAccept(AcceptCallback, null);
+        }
+        public void PlayerLoginRecieveCallback(IAsyncResult asyncResult)
+        {
+            Socket current = (Socket)asyncResult.AsyncState;
+            int recieved;
+
+            try
+            {
+                recieved = current.EndReceive(asyncResult);
+            }
+            catch (SocketException)
+            {
+                Log("Client Forcefully Disconected");
+                current.Close();
+                ClientSockets.Remove(current);
+                return;
+            }
+
+            byte[] recieveBuffer = new byte[recieved];
+            Array.Copy(buffer, recieveBuffer, recieved);
+            string text = Encoding.ASCII.GetString(recieveBuffer);
+
+            string[] textlist = text.Split(' ');
+            byte[] Data;
+            switch(textlist[0])
+            {
+                case "new":
+                    if (textlist.Length < 2)
+                    {
+                        string username = textlist[1];
+                        var query =
+                            from User in users
+                            where (User.Username == username)
+                            select User;
+                        if (query.ToArray().Length != 0)
+                        {
+                            Data = Encoding.ASCII.GetBytes("error username in use");
+                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                            current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
+                            break;
+                        }
+
+                        uint password = (uint)new Random().Next();
+                        uint sysid = UnallocatedPlayers[0];
+                        UnallocatedPlayers.Remove(sysid);
+
+                        User user = new User(username, password, sysid); 
+                        users.Add(user);
+
+                        Systems[sysid].LocalLog += user.Send;
+                        
+                        Data = Encoding.ASCII.GetBytes("success " + password);
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+
+                        current.BeginReceive(user.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, user);
+                        break;
+                    }
+                    else
+                    {
+                        byte[] data = Encoding.ASCII.GetBytes("error supply username"); 
+                        current.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                        current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
+                    }
+                    break;
+                case "login":
+                    if (textlist.Length >= 3)
+                    {
+                        string username = textlist[1];
+                        var query =
+                            from User in users
+                            where (User.Username == username)
+                            select User;
+                        if (query.ToArray().Length == 0)
+                        {
+                            Data = Encoding.ASCII.GetBytes("error username doesn't exist");
+                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                            current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
+                            break;
+                        }
+                        foreach (User u in query)
+                        {
+                            if (u.Password.ToString() == textlist[2])
+                            {
+                                u.Socket = current;
+                                Data = Encoding.ASCII.GetBytes("success");
+                                current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                                current.BeginReceive(u.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, u);
+                                break;
+
+                            }
+                        }
+                        Data = Encoding.ASCII.GetBytes("error invalid password");
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                        current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
+                        break;
+                    }
+                    else
+                    {
+                        byte[] data = Encoding.ASCII.GetBytes("error Supply Username and password");
+                        current.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                        current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
+                    }
+                    break;
+            }
+        }
+        public void PlayerConnectedRecieveCallback(IAsyncResult asyncResult)
+        {
+            User current = (User)asyncResult.AsyncState;
+            int recieved;
+
+            try
+            {
+                recieved = current.Socket.EndReceive(asyncResult);
+            }
+            catch (SocketException)
+            {
+                Log("Client Forcefully Disconected");
+                current.Socket.Close();
+                ClientSockets.Remove(current.Socket);
+                return;
+            }
+
+            byte[] recieveBuffer = new byte[recieved];
+            Array.Copy(buffer, recieveBuffer, recieved);
+            string text = Encoding.ASCII.GetString(recieveBuffer);
+            byte[] data;
+            string[] split = text.Split(' ');
+            switch (split[0].ToLower())
+            {
+                case "command":
+                    List<string> NetworkCommandList = new List<string>(split);
+                    NetworkCommandList.RemoveAt(0);
+                    NetworkCommandList.Insert(0,current.SysID.ToString());
+                    Command(NetworkCommandList.ToArray(), Log);
+                    break;
+
+                case "flag":
+                    if (split.Length > 1) 
+                    {
+                        var query =
+                            from flag in Flags
+                            where (flag.Item1.ToString() == split[1])
+                            select flag;
+                        if (query.ToArray().Length == 0)
+                        {
+                            data = Encoding.ASCII.GetBytes("error invalid flag");
+                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                            break; 
+                        }
+                        else
+                        {
+                            foreach (Tuple<ulong,string> t in query)
+                            current.flags.Add(new Tuple<UInt64, TimeSpan>(t.Item1, starttime-DateTime.Now));
+                        }
+                    } 
+                    break;
+
+                case "logout":
+                    current.Socket.Shutdown(SocketShutdown.Both);
+                    current.Socket.Close();
+                    ClientSockets.Remove(current.Socket);
+                    break;
+            }
+
+            current.Socket.BeginReceive(current.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, current);
+        }
+
+        public void Command(string[] commandlist, Action<string> Log)
+        {
+            if (commandlist.Length > 1)
+            {
+                try
+                {
+                    uint id = uint.Parse(commandlist[1]);
+                    string newcommand = "";
+                    for (int i = 2; i < commandlist.Length; i++)
+                    {
+                        newcommand += commandlist[i] + " ";
+                    }
+                    Systems[id].Command(newcommand.Trim(' '));
+                }
+                catch (FormatException e)
+                {
+                    Log("error parsing ID");
+                }
+                catch (OverflowException e)
+                {
+                    Log("error ID too large");
+                }
+            }
+            else
+            {
+                Log("error Must specify a system to act as");
+            }
         }
 
         public bool Connect(uint sysA, uint sysB)
@@ -76,9 +349,9 @@ namespace NSHG
             return Connect(sys1, sys2);
         }
 
-        public static Network LoadNetwork(string filepath, Action<String> log = null)
+        public static Network LoadNetwork(string filepath, Action<string> log = null)
         {
-            Network network = NewNet(log);
+            Network network = new Network(log);
             Action<string> Log = log ?? Console.WriteLine;
             
             
@@ -172,8 +445,33 @@ namespace NSHG
                         break;
 
                     case "player":
-
+                        try
+                        {
+                            sys = NSHG.System.FromXML(node, Log);
+                        }
+                        catch (Exception e)
+                        {
+                            Log("Reading System Failed");
+                            Log(e.ToString());
+                            break;
+                        }
+                        try
+                        {
+                            network.Systems.Add(sys.ID, sys);
+                            foreach (Adapter a in sys.NetworkInterfaces.Values)
+                            {
+                                network.TakenMacAddresses.Add(a.MyMACAddress);
+                            }
+                            Log("Added System \n    ID:" + sys.ID);
+                        }
+                        catch (Exception e)
+                        {
+                            Log("failed adding system to network");
+                            Log(e.ToString());
+                        }
+                        network.UnallocatedPlayers.Add(sys.ID);
                         break;
+                        
                     case "connection":
                         if (network.Connect(node))
                         {
@@ -187,14 +485,43 @@ namespace NSHG
                         }
                         break;
 
+                    case "flag":
+                        UInt64 id = 0;
+                        string mark = "";
+                        foreach(XmlNode n in node.ChildNodes)
+                        {
+                            if(n.Name.ToLower() == "id")
+                            {
+                                if (!UInt64.TryParse(n.InnerText,out id))
+                                {
+                                    Log("Invalid Flag id" + n.InnerText);
+                                }
+                            }
+                            else if (n.Name.ToLower() == "mark")
+                            {
+                                mark = n.InnerText;
+                            }
+                        }
+                        if ((id == 0) || (mark == ""))
+                        {
+                            Log("Failed to add flag" + node.InnerText);
+                        }
+                        else
+                        {
+                            network.Flags.Add(new Tuple<ulong, string>(id, mark));
+                            Log("Added flag with ID: " + id.ToString() + "/n    and mark: " + mark);
+                        }
+                        break;
+
                     default:
                         Log("Invalid Identifier " + s);
                         break;
                 }
             }
+            network.Setupserver();
             return network;
         }
-        public bool SaveNetwork(string filepath, Action<String> log)
+        public bool SaveNetwork(string filepath, Action<string> log)
         {
             try
             {
@@ -226,6 +553,16 @@ namespace NSHG
                 return false;
             }
             return true;
+        }
+        public void Exit()
+        {
+            foreach (Socket s in ClientSockets)
+            {
+                s.Shutdown(SocketShutdown.Both);
+                s.Close();
+            }
+            ServerSocket.Shutdown(SocketShutdown.Both);
+            ServerSocket.Close();
         }
     }
 }
