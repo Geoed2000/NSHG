@@ -16,7 +16,7 @@
             <TextBlock x:Name="LogBox" FontFamily="Consolas"/>
         </ScrollViewer>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
-            <TextBox x:Name="CommandsIn" AcceptsReturn="False" PreviewKeyDown="CommandsIn_PreviewKeyDown" Margin="5,1,0,1" Width="695"/>
+            <TextBox x:Name="CommandsIn" AcceptsReturn="False" PreviewKeyDown="CommandsIn_PreviewKeyDown" Margin="5,1,0,1" Width="695" Text="load sys1.xml"/>
             <Button  x:Name="SendButton" Click="SendButton_Click" Margin="5,2" Width="90" Content="Enter"/>
         </StackPanel>
     </Grid>

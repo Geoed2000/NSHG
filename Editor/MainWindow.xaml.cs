@@ -83,7 +83,7 @@ namespace XMLEditor
         {
             if (saved)
             {
-                network = Network.NewNet();
+                network = new Network();
 
                 ReloadSystemPane();
                 Frame.Content = null;

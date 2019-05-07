@@ -19,13 +19,13 @@
         </Grid.ColumnDefinitions>
         <Label>IP Address</Label>
         <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
-            <TextBox x:Name="Byte1" TextChanged="Byte_TextChanged" Width="30"/>
+            <TextBox x:Name="Byte1" TextChanged="Byte_TextChanged" Width="30" Text="192"/>
             <Label>.</Label>
-            <TextBox x:Name="Byte2" TextChanged="Byte_TextChanged" Width="30"/>
+            <TextBox x:Name="Byte2" TextChanged="Byte_TextChanged" Width="30" Text="168"/>
             <Label>.</Label>
-            <TextBox x:Name="Byte3" TextChanged="Byte_TextChanged" Width="30"/>
+            <TextBox x:Name="Byte3" TextChanged="Byte_TextChanged" Width="30" Text="1"/>
             <Label>.</Label>
-            <TextBox x:Name="Byte4" TextChanged="Byte_TextChanged" Width="30"/>
+            <TextBox x:Name="Byte4" TextChanged="Byte_TextChanged" Width="30" Text="41"/>
         </StackPanel>
         <Button x:Name="ConnectButton" Grid.Row="1" Margin="3" Content="Connect" Click="ConnectButton_Click"/>
         <Label x:Name="OutLabel" Grid.Row="1" Grid.Column="1"/>

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  <System>
+  <Player>
     <ID>1</ID>
     <RespondToEcho>True</RespondToEcho>
     <Adapter>
@@ -13,9 +13,9 @@
       <connectedsystem>3</connectedsystem>
       <connected>True</connected>
     </Adapter>
-   </System>
+   </Player>
   
-  <System>
+  <Player>
     <ID>2</ID>
     <RespondToEcho>True</RespondToEcho>
     <Adapter>
@@ -28,7 +28,7 @@
       <connectedsystem>3</connectedsystem>
       <connected>True</connected>
     </Adapter>
-   </System>
+   </Player>
   
   <Router>
     <ID>3</ID>

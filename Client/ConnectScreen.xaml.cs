@@ -24,12 +24,22 @@ namespace Client
     {
         public static char[] nums = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         public MainWindow Parent;
-        Socket ClientSocket = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.IPv4);
+        private readonly Socket ClientSocket = new Socket(AddressFamily.InterNetwork ,SocketType.Stream ,ProtocolType.Tcp);
         int attempts;
+        string ip;
+        bool attempting = false;
+
         public ConnectScreen(MainWindow Parent)
         {
             this.Parent = Parent;
             InitializeComponent();
+        }
+        public void log(string log)
+        {
+            Dispatcher.Invoke(new Action(delegate ()
+               {
+                   OutLabel.Content = log;
+               }));
         }
 
         private void Byte_TextChanged(object sender, TextChangedEventArgs e)
@@ -54,28 +64,45 @@ namespace Client
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            string ip = Byte1.Text + "." + Byte2.Text + "." + Byte3.Text + "." + Byte4.Text;
-            attempts = 0;
-            ClientSocket.BeginConnect(ip, Network.port, connectRecieveCallback, ClientSocket);
-           
+            if (!attempting)
+            {
+                ip = Byte1.Text + "." + Byte2.Text + "." + Byte3.Text + "." + Byte4.Text;
+                attempts = 0;
+                attempting = true;
+                ClientSocket.BeginConnect(ip, Network.port, connectRecieveCallback, ClientSocket);
+            }
         }
         
         public void connectRecieveCallback(IAsyncResult asyncResult)
         {
+            try
+            {
+                ClientSocket.EndConnect(asyncResult);
+            }catch (SocketException)
+            {
+
+            }
             if (ClientSocket.Connected)
             {
-                Parent.MainFrame.Content = new LoginScreen(Parent);
+                Dispatcher.Invoke(new Action(delegate ()
+                {
+                    Parent.MainFrame.Content = new LoginScreen(Parent,ClientSocket);
+                }));
+                
             }
             else
             {
                 attempts++;
-                if (attempts >= 3)
+                if (attempts >= 10)
                 {
-                    OutLabel.Content = "Could not connect to server";
+                    log("Could not connect to server");
+                    attempting = false;
                 }
                 else
                 {
-                    OutLabel.Content = "Failed attempt "+ attempts + " to connect";
+                    log("Failed attempt "+ attempts + " to connect");
+                    ClientSocket.BeginConnect(ip, Network.port, connectRecieveCallback, ClientSocket);
+                    attempting = true;
                 }
             }
         }

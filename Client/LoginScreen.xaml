@@ -19,12 +19,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Label  Grid.Column="0" Grid.Row="0" Margin="1" x:Name="UsernameLabel">Username</Label>
-        <TextBox Grid.Column="1" Grid.Row="0" Margin="1" x:Name="UsernameIn"/>
+        <TextBox Grid.Column="1" Grid.Row="0" Margin="1" x:Name="UsernameIn" TextChanged="UsernameIn_TextChanged"/>
         <Label  Grid.Column="0" Grid.Row="1" Margin="1" x:Name="PasswordLabel">Password</Label>
         <TextBox Grid.Column="1" Grid.Row="1" Margin="1" x:Name="PasswordIn"/>
         <StackPanel Grid.Column="0" Grid.Row="2">
-            <Button Margin="1" x:Name="ConnectButton" Click="ConnectButton_Click">Re Connect</Button>
+            <Button Margin="1" x:Name="ConnectButton" Click="LoginButton_Click" Content="Login"/>
             <Button Margin="1" x:Name="NewUserButton" Click="NewUserButton_Click">New User</Button>
+            <Button Margin="1" x:Name="ContinueButton" Click="ContinueButton_Click" IsEnabled="False" Visibility="Hidden">Continue</Button>
         </StackPanel>
         <Label Grid.Column="1" Grid.Row="2" Margin="1" x:Name="OutLabel"/>
     </Grid>

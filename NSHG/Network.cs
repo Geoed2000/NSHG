@@ -22,7 +22,7 @@ namespace NSHG
         public Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         public List<Socket> ClientSockets;
         public const int buffersize = 2048;
-        public const int port = 100;
+        public const int port = 1016;
         private static readonly byte[] buffer = new byte[buffersize];
         public List<User> users;
 
@@ -37,8 +37,9 @@ namespace NSHG
             public byte[] Recievebuffer;
             public List<byte[]> packetsnotsent;
             public List<Tuple<UInt64, TimeSpan>> flags;
+            Action<string> Log;
 
-            public User(string username, uint passsword, uint sysID)
+            public User(string username, uint passsword, uint sysID, Action<string> Log)
             {
                 Username = "";
                 Password = 0;
@@ -47,6 +48,26 @@ namespace NSHG
                 Recievebuffer = new byte[buffersize];
                 packetsnotsent = new List<byte[]>();
                 flags = new List<Tuple<UInt64, TimeSpan>>();
+                this.Log = Log;
+            }
+
+
+            private void SendCallback(IAsyncResult asyncResult)
+            {
+                Tuple<Socket,Byte[]> clientSocket = (Tuple<Socket,Byte[]>)asyncResult.AsyncState;
+                try
+                {
+                    clientSocket.Item1.EndSend(asyncResult);
+                }
+                catch (SocketException e)
+                {
+                    packetsnotsent.Add(clientSocket.Item2);
+                    Socket.Close();
+                }
+                catch (ObjectDisposedException e)
+                {
+
+                }
             }
 
             public void Send(string s)
@@ -54,12 +75,11 @@ namespace NSHG
                 byte[] data = ASCIIEncoding.ASCII.GetBytes(s);
                 try
                 {
-                    Socket.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                    Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, new Tuple<Socket,Byte[]> (Socket,data));
 
-                }catch(SocketException e)
+                }catch(Exception)
                 {
                     packetsnotsent.Add(data);
-                    Socket.Close();
                 }
             }
             public bool Connect(Socket s)
@@ -86,6 +106,7 @@ namespace NSHG
             users = new List<User>();
             UnallocatedPlayers = new List<uint>();
             TakenMacAddresses = new List<MAC>();
+            ClientSockets = new List<Socket>();
 
             
             Log = log ?? Console.WriteLine;
@@ -133,11 +154,15 @@ namespace NSHG
             string text = Encoding.ASCII.GetString(recieveBuffer);
 
             string[] textlist = text.Split(' ');
+
+            Log("Packet from client on ip " + ((IPEndPoint)current.RemoteEndPoint).Address);
+            Log("    " + text);
+
             byte[] Data;
             switch(textlist[0])
             {
                 case "new":
-                    if (textlist.Length < 2)
+                    if (textlist.Length > 1)
                     {
                         string username = textlist[1];
                         var query =
@@ -147,7 +172,7 @@ namespace NSHG
                         if (query.ToArray().Length != 0)
                         {
                             Data = Encoding.ASCII.GetBytes("error username in use");
-                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                             current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
                             break;
                         }
@@ -156,23 +181,23 @@ namespace NSHG
                         uint sysid = UnallocatedPlayers[0];
                         UnallocatedPlayers.Remove(sysid);
 
-                        User user = new User(username, password, sysid); 
+                        User user = new User(username, password, sysid, Log); 
                         users.Add(user);
 
                         Systems[sysid].LocalLog += user.Send;
                         
-                        Data = Encoding.ASCII.GetBytes("success " + password);
-                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                        Data = Encoding.ASCII.GetBytes("success password is " + password);
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
 
                         current.BeginReceive(user.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, user);
                         break;
                     }
                     else
                     {
-                        byte[] data = Encoding.ASCII.GetBytes("error supply username"); 
-                        current.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                        Data = Encoding.ASCII.GetBytes("error supply username"); 
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                         current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
-                    }
+                   }
                     break;
                 case "login":
                     if (textlist.Length >= 3)
@@ -185,7 +210,7 @@ namespace NSHG
                         if (query.ToArray().Length == 0)
                         {
                             Data = Encoding.ASCII.GetBytes("error username doesn't exist");
-                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                            current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                             current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
                             break;
                         }
@@ -195,21 +220,21 @@ namespace NSHG
                             {
                                 u.Socket = current;
                                 Data = Encoding.ASCII.GetBytes("success");
-                                current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                                current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                                 current.BeginReceive(u.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, u);
                                 break;
 
                             }
                         }
                         Data = Encoding.ASCII.GetBytes("error invalid password");
-                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, null, null);
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                         current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
                         break;
                     }
                     else
                     {
-                        byte[] data = Encoding.ASCII.GetBytes("error Supply Username and password");
-                        current.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                        Data = Encoding.ASCII.GetBytes("error Supply Username and password");
+                        current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                         current.BeginReceive(buffer, 0, buffersize, SocketFlags.None, PlayerLoginRecieveCallback, current);
                     }
                     break;
@@ -224,9 +249,9 @@ namespace NSHG
             {
                 recieved = current.Socket.EndReceive(asyncResult);
             }
-            catch (SocketException)
+            catch (Exception e)
             {
-                Log("Client Forcefully Disconected");
+                Log("Client Forcefully Disconected " + e.Message);
                 current.Socket.Close();
                 ClientSockets.Remove(current.Socket);
                 return;
@@ -256,7 +281,7 @@ namespace NSHG
                         if (query.ToArray().Length == 0)
                         {
                             data = Encoding.ASCII.GetBytes("error invalid flag");
-                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, current.Socket);
                             break; 
                         }
                         else
@@ -275,6 +300,22 @@ namespace NSHG
             }
 
             current.Socket.BeginReceive(current.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, current);
+        }
+        private void SendCallback(IAsyncResult asyncResult)
+        {
+            Socket clientSocket = (Socket)asyncResult.AsyncState;
+            try
+            {
+                clientSocket.EndSend(asyncResult);
+            }
+            catch (SocketException e)
+            {
+                Log(e.Message);
+            }
+            catch (ObjectDisposedException e)
+            {
+                Log(e.Message);
+            }
         }
 
         public void Command(string[] commandlist, Action<string> Log)
