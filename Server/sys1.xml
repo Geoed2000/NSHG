@@ -6,7 +6,7 @@
     <Adapter>
       <name>Adapter 1</name>
       <sysid>1</sysid>
-      <mac>ff:ff:ff:ff:ff:ff</mac>
+      <mac>6D:4D:F2:48:69:B4</mac>
       <localip>192.168.1.2</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
@@ -21,7 +21,7 @@
     <Adapter>
       <name>Adapter 1</name>
       <sysid>2</sysid>
-      <mac>ff:ff:ff:ff:ff:fe</mac>
+      <mac>6D:4D:F2:48:69:B4</mac>
       <localip>192.168.1.3</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
@@ -36,7 +36,7 @@
     <GroupAdapter>
       <name>Adapter 1</name>
       <sysid>3</sysid>
-      <mac>ff:ff:ff:ff:ff:fd</mac>
+      <mac>6D:4D:F2:4C:A3:16</mac>
       <localip>192.168.1.1</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
@@ -48,6 +48,11 @@
     </GroupAdapter>
    </Router>
   
+  <Flag>
+    <id>6D4DF24CA316</id>
+    <mark>Flag1</mark>
+  </Flag>
+  
   <Connection>
     <ID>1</ID>
     <ID>3</ID>
@@ -56,4 +61,11 @@
     <ID>2</ID>
     <ID>3</ID>
   </Connection>
+
+  
+  <Scenario>
+      <message Tick="1" Text="Tick 1"/>
+      <message Tick="10" Text="Tick 10"/>
+      <message Tick="20" Text="Tick 20"/>
+  </Scenario>
 </Root>

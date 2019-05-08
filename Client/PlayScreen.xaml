@@ -8,7 +8,32 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="PlayScreen">
 
-    <Grid>
+    <Grid x:Name="Grid">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <ScrollViewer x:Name="SystemScrollView" Grid.Row="0">
+            <TextBlock x:Name="SystemLogBox" FontFamily="Consolas"/>
+        </ScrollViewer>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="CommandsIn" Grid.Column="0" AcceptsReturn="False" PreviewKeyDown="CommandsIn_PreviewKeyDown" Margin="1" Text=""/>
+            <Button  x:Name="SendButton" Grid.Column="1" Click="SendButton_Click" Margin="5,2" Width="90" Content="Enter"/>
+        </Grid>
         
+        <ScrollViewer x:Name="ScenarioScrollView" Grid.Column="1">
+            <TextBlock x:Name="ScenarioLogBox" FontFamily="Consolas"/>
+        </ScrollViewer>
+        <Button x:Name="FlagSubmitButton" Grid.Column="1" Grid.Row="1" Width="100" Click="FlagSubmitButton_Click">Flag Submit</Button>
+
     </Grid>
 </Page>

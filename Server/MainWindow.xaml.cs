@@ -79,10 +79,7 @@ namespace Server
             tick++;
             //Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
             //Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
-            foreach (NSHG.System s in network.Systems.Values)
-            {
-                s.Tick(tick);
-            }
+            network.Tick(tick);
             //Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
             if (tick % 10 == 0)
             {
@@ -192,7 +189,7 @@ namespace Server
                     {
                         List<string> NetworkCommandList = new List<string>(commandlist);   
                         NetworkCommandList.RemoveAt(0);
-                        network.Command(NetworkCommandList.ToArray(), Log);
+                        network.asSystem(NetworkCommandList.ToArray(), Log);
                     }
                     break;
                 case "tick":

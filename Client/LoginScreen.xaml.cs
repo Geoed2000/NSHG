@@ -94,6 +94,7 @@ namespace Client
                     break;
             }
             
+            ClientSocket.BeginReceive(Buffer, 0, 0, SocketFlags.None, LoginRecieveCallback, ClientSocket);
         }
 
         private void ContinueButton_Click(object sender, RoutedEventArgs e)

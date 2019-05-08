@@ -14,7 +14,7 @@ namespace NSHG
     {
         public Dictionary<uint, System> Systems;
         public List<Tuple<uint, uint>> Connections;
-        public List<Tuple<UInt64, string>> Flags;
+        public List<Tuple<string, string>> Flags;
         public DateTime starttime;
         public List<uint> UnallocatedPlayers;
         public List<MAC> TakenMacAddresses;
@@ -25,6 +25,7 @@ namespace NSHG
         public const int port = 1016;
         private static readonly byte[] buffer = new byte[buffersize];
         public List<User> users;
+        public SortedList<uint, string> Scenario;
 
         public Action<string> Log;
 
@@ -36,7 +37,7 @@ namespace NSHG
             public Socket Socket;
             public byte[] Recievebuffer;
             public List<byte[]> packetsnotsent;
-            public List<Tuple<UInt64, TimeSpan>> flags;
+            public List<Tuple<string, TimeSpan>> flags;
             Action<string> Log;
 
             public User(string username, uint passsword, uint sysID, Action<string> Log)
@@ -47,7 +48,7 @@ namespace NSHG
                 Socket = null;
                 Recievebuffer = new byte[buffersize];
                 packetsnotsent = new List<byte[]>();
-                flags = new List<Tuple<UInt64, TimeSpan>>();
+                flags = new List<Tuple<string, TimeSpan>>();
                 this.Log = Log;
             }
 
@@ -102,7 +103,7 @@ namespace NSHG
             
             Systems = new Dictionary<uint, System>();
             Connections = new List<Tuple<uint, uint>>();
-            Flags = new List<Tuple<ulong, string>>();
+            Flags = new List<Tuple<string, string>>();
             users = new List<User>();
             UnallocatedPlayers = new List<uint>();
             TakenMacAddresses = new List<MAC>();
@@ -117,7 +118,7 @@ namespace NSHG
         {
             Log("Setting up server");
             ServerSocket.Bind(new IPEndPoint(IPAddress.Any, port));
-            ServerSocket.Listen(0);
+            ServerSocket.Listen(2);
             ServerSocket.BeginAccept(AcceptCallback, null);
             Log("Server setup complete");
         }
@@ -181,7 +182,8 @@ namespace NSHG
                         uint sysid = UnallocatedPlayers[0];
                         UnallocatedPlayers.Remove(sysid);
 
-                        User user = new User(username, password, sysid, Log); 
+                        User user = new User(username, password, sysid, Log);
+                        user.Socket = current;
                         users.Add(user);
 
                         Systems[sysid].LocalLog += user.Send;
@@ -249,9 +251,15 @@ namespace NSHG
             {
                 recieved = current.Socket.EndReceive(asyncResult);
             }
-            catch (Exception e)
+            catch (SocketException e)
             {
                 Log("Client Forcefully Disconected " + e.Message);
+                current.Socket.Close();
+                ClientSockets.Remove(current.Socket);
+                return;
+            }catch (ObjectDisposedException e)
+            {
+                Log("Client Forcefully Disconected");
                 current.Socket.Close();
                 ClientSockets.Remove(current.Socket);
                 return;
@@ -268,7 +276,7 @@ namespace NSHG
                     List<string> NetworkCommandList = new List<string>(split);
                     NetworkCommandList.RemoveAt(0);
                     NetworkCommandList.Insert(0,current.SysID.ToString());
-                    Command(NetworkCommandList.ToArray(), Log);
+                    asSystem(NetworkCommandList.ToArray(), Log);
                     break;
 
                 case "flag":
@@ -286,8 +294,8 @@ namespace NSHG
                         }
                         else
                         {
-                            foreach (Tuple<ulong,string> t in query)
-                            current.flags.Add(new Tuple<UInt64, TimeSpan>(t.Item1, starttime-DateTime.Now));
+                            foreach (Tuple<string,string> t in query)
+                            current.flags.Add(new Tuple<string, TimeSpan>(t.Item1, starttime-DateTime.Now));
                         }
                     } 
                     break;
@@ -318,7 +326,7 @@ namespace NSHG
             }
         }
 
-        public void Command(string[] commandlist, Action<string> Log)
+        public void asSystem(string[] commandlist, Action<string> Log)
         {
             if (commandlist.Length > 1)
             {
@@ -346,7 +354,26 @@ namespace NSHG
                 Log("error Must specify a system to act as");
             }
         }
-
+        public void message(string text)
+        {
+            byte[] data = Encoding.ASCII.GetBytes("scenario " + text);
+            foreach (Socket s in ClientSockets)
+            {
+                s.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, s);
+            }
+        }
+        public void Tick(uint tick)
+        {
+            foreach (NSHG.System s in Systems.Values)
+            {
+                s.Tick(tick);
+            }
+            if (Scenario.ContainsKey(tick))
+            {
+                message(Scenario[tick]);
+            }
+            
+        }
         public bool Connect(uint sysA, uint sysB)
         {
             NetworkInterface a, b;
@@ -527,15 +554,19 @@ namespace NSHG
                         break;
 
                     case "flag":
-                        UInt64 id = 0;
+                        string id = "";
                         string mark = "";
                         foreach(XmlNode n in node.ChildNodes)
                         {
                             if(n.Name.ToLower() == "id")
                             {
-                                if (!UInt64.TryParse(n.InnerText,out id))
+                                if (n.InnerText == "")
                                 {
-                                    Log("Invalid Flag id" + n.InnerText);
+                                    Log("Invalid Flag id");
+                                }
+                                else
+                                {
+                                    id = n.InnerText;
                                 }
                             }
                             else if (n.Name.ToLower() == "mark")
@@ -543,14 +574,44 @@ namespace NSHG
                                 mark = n.InnerText;
                             }
                         }
-                        if ((id == 0) || (mark == ""))
+                        if ((id == "") || (mark == ""))
                         {
                             Log("Failed to add flag" + node.InnerText);
                         }
                         else
                         {
-                            network.Flags.Add(new Tuple<ulong, string>(id, mark));
-                            Log("Added flag with ID: " + id.ToString() + "/n    and mark: " + mark);
+                            network.Flags.Add(new Tuple<string, string>(id, mark));
+                            Log("Added flag with ID: " + id + "/n    and mark: " + mark);
+                        }
+                        break;
+
+                    case "Scenario":
+                        foreach(XmlNode n in node.ChildNodes)
+                        {
+                            if(n.Name == "message")
+                            {
+                                uint time = 0;
+                                string text= "";
+                                foreach (XmlAttribute a in n.Attributes)
+                                {
+                                    if (a.Name.ToLower() == "tick")
+                                    {
+                                        try
+                                        {
+                                            time = uint.Parse(a.InnerText);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Log(e.Message);
+                                        }
+                                    }
+                                    if (a.Name.ToLower() == "text")
+                                    {
+                                        text = a.InnerText;
+                                    }
+                                }
+                                network.Scenario.Add(time,text);
+                            }
                         }
                         break;
 
@@ -559,6 +620,7 @@ namespace NSHG
                         break;
                 }
             }
+            
             network.Setupserver();
             return network;
         }
