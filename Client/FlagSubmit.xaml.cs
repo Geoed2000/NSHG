@@ -23,6 +23,7 @@ namespace Client
         public FlagSubmit(Socket clientSocket)
         {
             InitializeComponent();
+            client = clientSocket;
         }
 
         public void Responce(string s)
@@ -37,7 +38,7 @@ namespace Client
         {
             if (!(FlagIn.Text.Trim() == ""))
             {
-                byte[] data = Encoding.ASCII.GetBytes(FlagIn.Text);
+                byte[] data = Encoding.ASCII.GetBytes("flag " + FlagIn.Text);
                 client.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
             }
         }

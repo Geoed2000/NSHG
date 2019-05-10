@@ -307,6 +307,12 @@ namespace NSHG
                         }
                     }
                     break;
+                case "new":
+
+                    break;
+                case "help":
+
+                    break;
             }
         }
 

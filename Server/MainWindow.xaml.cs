@@ -140,8 +140,8 @@ namespace Server
                         try
                         {
                             tmpfilepath = commandlist[1];
-                            if (network.SaveNetwork(tmpfilepath, Log)) Console.WriteLine("Save successfull");
-                            else Console.WriteLine("Save unsuccessfull");
+                            if (network.SaveNetwork(tmpfilepath, Log)) Log("Save successfull");
+                            else Log("Save unsuccessfull");
                         }
                         catch (Exception)
                         {
@@ -204,7 +204,26 @@ namespace Server
                     {
                         Log(e.ToString());
                         
-                    }break;
+                    }
+                    break;
+                case "report":
+                    try
+                    {
+                        tmpfilepath = commandlist[1];
+                    }
+                    catch (IndexOutOfRangeException)
+                    {
+                        Log("no filepath given");
+                        break;
+                    }
+                    if (network.report(tmpfilepath)) Log("Successfull generated report at " + tmpfilepath);
+                    Log("Invalid filepath");
+                    break;
+                default:
+                    Log("Unknown command: " + commandlist[0]);
+                    Log("Use the help command for a list of commands");
+                    break;
+
 
             }
         }

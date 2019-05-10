@@ -25,7 +25,7 @@
             <Label>.</Label>
             <TextBox x:Name="Byte3" TextChanged="Byte_TextChanged" Width="30" Text="227"/>
             <Label>.</Label>
-            <TextBox x:Name="Byte4" TextChanged="Byte_TextChanged" Width="30" Text="51"/>
+            <TextBox x:Name="Byte4" TextChanged="Byte_TextChanged" Width="30" Text="63"/>
         </StackPanel>
         <Button x:Name="ConnectButton" Grid.Row="1" Margin="3" Content="Connect" Click="ConnectButton_Click"/>
         <Label x:Name="OutLabel" Grid.Row="1" Grid.Column="1"/>

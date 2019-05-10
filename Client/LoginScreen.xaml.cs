@@ -30,7 +30,7 @@ namespace Client
             ClientSocket = socket;
             this.Parent = Parent;
             InitializeComponent();
-            ClientSocket.BeginReceive(Buffer, 0, 0, SocketFlags.None, LoginRecieveCallback, ClientSocket);
+            ClientSocket.BeginReceive(Buffer, 0, Network.buffersize, SocketFlags.None, LoginRecieveCallback, ClientSocket);
         }
 
         public void log(string log)
@@ -80,31 +80,32 @@ namespace Client
                     {
                         log(data);
                     }
-                    ContinueButton.IsEnabled = true;
-                    ContinueButton.Visibility = Visibility.Visible;
+                    Dispatcher.Invoke(new Action(delegate ()
+                    {
+                        ContinueButton.IsEnabled = true;
+                        ContinueButton.Visibility = Visibility.Visible;
+                    }));
+                    
                     break;
                 case "error":
                     if(packet.Length > 1)
                     {
                         log(data);
+                        ClientSocket.BeginReceive(Buffer, 0, Network.buffersize, SocketFlags.None, LoginRecieveCallback, ClientSocket);
+
                     }
                     break;
                 default:
                     log("Invalid server packet: " + data);
+                    ClientSocket.BeginReceive(Buffer, 0, Network.buffersize, SocketFlags.None, LoginRecieveCallback, ClientSocket);
                     break;
             }
             
-            ClientSocket.BeginReceive(Buffer, 0, 0, SocketFlags.None, LoginRecieveCallback, ClientSocket);
         }
 
         private void ContinueButton_Click(object sender, RoutedEventArgs e)
         {
-
-        }
-
-        private void UsernameIn_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
+            Parent.MainFrame.Content = new PlayScreen(ClientSocket, Parent);
         }
     }
 }

@@ -6,6 +6,7 @@ using NSHG.NetworkInterfaces;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
+using System.IO;
 
 
 namespace NSHG
@@ -22,7 +23,7 @@ namespace NSHG
         public Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         public List<Socket> ClientSockets;
         public const int buffersize = 2048;
-        public const int port = 1016;
+        public const int port = 25565;
         private static readonly byte[] buffer = new byte[buffersize];
         public List<User> users;
         public SortedList<uint, string> Scenario;
@@ -40,11 +41,12 @@ namespace NSHG
             public List<Tuple<string, TimeSpan>> flags;
             Action<string> Log;
 
+
             public User(string username, uint passsword, uint sysID, Action<string> Log)
             {
-                Username = "";
-                Password = 0;
-                SysID = 0;
+                Username = username;
+                Password = passsword;
+                SysID = sysID;
                 Socket = null;
                 Recievebuffer = new byte[buffersize];
                 packetsnotsent = new List<byte[]>();
@@ -104,6 +106,7 @@ namespace NSHG
             Systems = new Dictionary<uint, System>();
             Connections = new List<Tuple<uint, uint>>();
             Flags = new List<Tuple<string, string>>();
+            Scenario = new SortedList<uint, string>();
             users = new List<User>();
             UnallocatedPlayers = new List<uint>();
             TakenMacAddresses = new List<MAC>();
@@ -186,9 +189,9 @@ namespace NSHG
                         user.Socket = current;
                         users.Add(user);
 
-                        Systems[sysid].LocalLog += user.Send;
-                        
-                        Data = Encoding.ASCII.GetBytes("success password is " + password);
+                        Systems[sysid].LocalLog += s => { user.Send("system " + s); };
+
+                        Data = Encoding.ASCII.GetBytes("success username: " + username + ",password: " + password);
                         current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
 
                         current.BeginReceive(user.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, user);
@@ -222,6 +225,7 @@ namespace NSHG
                             {
                                 u.Socket = current;
                                 Data = Encoding.ASCII.GetBytes("success");
+                                Systems[u.SysID].LocalLog += s => { u.Send("system " + s); };
                                 current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
                                 current.BeginReceive(u.Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, u);
                                 break;
@@ -266,8 +270,12 @@ namespace NSHG
             }
 
             byte[] recieveBuffer = new byte[recieved];
-            Array.Copy(buffer, recieveBuffer, recieved);
+            Array.Copy(current.Recievebuffer, recieveBuffer, recieved);
             string text = Encoding.ASCII.GetString(recieveBuffer);
+
+            Log("Packet from client on ip " + ((IPEndPoint)current.Socket.RemoteEndPoint).Address);
+            Log("    " + text);
+
             byte[] data;
             string[] split = text.Split(' ');
             switch (split[0].ToLower())
@@ -288,14 +296,16 @@ namespace NSHG
                             select flag;
                         if (query.ToArray().Length == 0)
                         {
-                            data = Encoding.ASCII.GetBytes("error invalid flag");
+                            data = Encoding.ASCII.GetBytes("flag error invalid flag");
                             current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, current.Socket);
                             break; 
                         }
                         else
                         {
                             foreach (Tuple<string,string> t in query)
-                            current.flags.Add(new Tuple<string, TimeSpan>(t.Item1, starttime-DateTime.Now));
+                            current.flags.Add(new Tuple<string, TimeSpan>(t.Item1, DateTime.Now-starttime));
+                            data = Encoding.ASCII.GetBytes("flag Success!");
+                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, current.Socket);
                         }
                     } 
                     break;
@@ -362,6 +372,50 @@ namespace NSHG
                 s.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, s);
             }
         }
+        public bool report(string filepath)
+        {
+            string[,] report = new string[Flags.Count + 1,users.Count + 1];
+            for(int i = 0; i < users.Count; i++)
+            {
+                report[0, i+1] = users[i].Username;
+            }
+            for(int f = 0; f<Flags.Count; f++)
+            {
+                report[f+1, 0] = Flags[f].Item2;
+                for(int u = 0; u < users.Count; u++)
+                { 
+                    foreach (Tuple<string,TimeSpan> entry in users[u].flags)
+                    {
+                        if(entry.Item1 == Flags[f].Item1)
+                        {
+                            report[f + 1, u + 1] = entry.Item2.Hours.ToString() + ":" + entry.Item2.Minutes.ToString() + ":" + entry.Item2.Seconds.ToString();
+                        }
+                    }
+                }
+            }
+            try
+            {
+                using (StreamWriter file = new StreamWriter(filepath))
+                {
+                    for (int i = 0; i < users.Count + 1; i++)
+                    {
+                        for (int j = 0; j < Flags.Count + 1; j++)
+                        {
+                            file.Write(report[i, j] + ",");
+                        }
+                        file.Write("\r\n");
+                    }
+                    file.Close();
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            
+        }
+
         public void Tick(uint tick)
         {
             foreach (NSHG.System s in Systems.Values)
@@ -374,6 +428,7 @@ namespace NSHG
             }
             
         }
+
         public bool Connect(uint sysA, uint sysB)
         {
             NetworkInterface a, b;
@@ -416,7 +471,6 @@ namespace NSHG
             }
             return Connect(sys1, sys2);
         }
-
         public static Network LoadNetwork(string filepath, Action<string> log = null)
         {
             Network network = new Network(log);
@@ -581,11 +635,11 @@ namespace NSHG
                         else
                         {
                             network.Flags.Add(new Tuple<string, string>(id, mark));
-                            Log("Added flag with ID: " + id + "/n    and mark: " + mark);
+                            Log("Added flag with ID: " + id + "\n    and mark: " + mark);
                         }
                         break;
 
-                    case "Scenario":
+                    case "scenario":
                         foreach(XmlNode n in node.ChildNodes)
                         {
                             if(n.Name == "message")
@@ -610,6 +664,7 @@ namespace NSHG
                                         text = a.InnerText;
                                     }
                                 }
+                                Log("Added message at " + time + "Ticks with message \n        " + text);
                                 network.Scenario.Add(time,text);
                             }
                         }

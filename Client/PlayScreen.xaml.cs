@@ -23,7 +23,7 @@ namespace Client
     {
         MainWindow Parent;
         FlagSubmit Submit;
-        Socket Client;
+        Socket ClientSocket;
         List<string> SystemLog;
         Action<string> Log;
         List<string> ScenarioLog;
@@ -33,12 +33,15 @@ namespace Client
 
         public PlayScreen(Socket clientSocket, MainWindow parent)
         {
-            Log += SystemLog.Add;
-            Log += s => { SystemLogBox.Text += "/n" + s; };
-            Client = clientSocket;
-            CommandLog = new List<string>() { ""};
+            ScenarioLog = new List<string>();
+            SystemLog = new List<string>();
+            Parent = parent;
+            Log += s => { SystemLog.Add(s); };
+            Log += s => { SystemLogBox.Text += "\n" + s; };
+            ClientSocket = clientSocket;
+            CommandLog = new List<string>() { "" };
             InitializeComponent();
-            clientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, Client);
+            clientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, ClientSocket);
         }
 
         public void RecieveCallback(IAsyncResult asyncResult)
@@ -46,12 +49,12 @@ namespace Client
             int recieved;
             try
             {
-                recieved = Client.EndReceive(asyncResult);
+                recieved = ClientSocket.EndReceive(asyncResult);
             }
             catch (Exception e)
             {
                 SystemLog.Add ("Client Forcefully Disconected " + e.Message);
-                Client.Close();
+                ClientSocket.Close();
                 Parent.MainFrame.Content = new ConnectScreen(Parent);
                 return;
             }
@@ -78,7 +81,7 @@ namespace Client
                     Dispatcher.Invoke(new Action(delegate ()
                     {
                         ScenarioLog.Add(message);
-                        ScenarioLogBox.Text += ("/n" + message);
+                        ScenarioLogBox.Text += ("\n" + message);
                     }));
                     break;
                 case "system":
@@ -89,22 +92,24 @@ namespace Client
                     }));
                     break;
             }
+            ClientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, ClientSocket);
         }
 
         private void FlagSubmitButton_Click(object sender, RoutedEventArgs e)
         {
-            Submit = new FlagSubmit(Client);
+            Submit = new FlagSubmit(ClientSocket);
+            Submit.Show();
         }
 
         public void SendCallback(IAsyncResult AR)
         {
             try
             {
-                Client.EndSend(AR);
+                ClientSocket.EndSend(AR);
             }
             catch (SocketException)
             {
-                Client.Close();
+                ClientSocket.Close();
                 Parent.MainFrame.Content = new ConnectScreen(Parent);
             }
         }
@@ -112,7 +117,7 @@ namespace Client
         private void Command(string command)
         {
             byte[] data = Encoding.ASCII.GetBytes(command);
-            Client.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, Client);
+            ClientSocket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, ClientSocket);
 
         }
 
