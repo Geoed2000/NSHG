@@ -30,6 +30,7 @@ namespace Client
         byte[] buffer = new byte[NSHG.Network.buffersize];
         int upto;
         List<string> CommandLog;
+        NSHG.PacketProtocol packetProtocol = new NSHG.PacketProtocol(NSHG.Network.buffersize);
 
         public PlayScreen(Socket clientSocket, MainWindow parent)
         {
@@ -40,6 +41,7 @@ namespace Client
             Log += s => { SystemLogBox.Text += "\n" + s; };
             ClientSocket = clientSocket;
             CommandLog = new List<string>() { "" };
+            packetProtocol.MessageArrived = ProcessPacket;
             InitializeComponent();
             clientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, ClientSocket);
         }
@@ -63,7 +65,30 @@ namespace Client
                 return;
             }
 
-            string data = Encoding.ASCII.GetString(buffer, 0, recieved);
+
+            byte[] data = new byte[recieved];
+            Array.Copy(buffer, data, recieved);
+
+            packetProtocol.DataReceived(data);
+
+            ClientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, ClientSocket);
+        }
+        public void SendCallback(IAsyncResult AR)
+        {
+            try
+            {
+                ClientSocket.EndSend(AR);
+            }
+            catch (SocketException)
+            {
+                ClientSocket.Close();
+                Parent.MainFrame.Content = new ConnectScreen(Parent);
+            }
+        }
+
+        public void ProcessPacket(byte[] Data)
+        {
+            string data = Encoding.ASCII.GetString(Data, 0, Data.Length);
             string[] commands = data.Split(' ');
             string message;
             switch (commands[0].ToLower())
@@ -92,7 +117,6 @@ namespace Client
                     }));
                     break;
             }
-            ClientSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, RecieveCallback, ClientSocket);
         }
 
         private void FlagSubmitButton_Click(object sender, RoutedEventArgs e)
@@ -100,24 +124,13 @@ namespace Client
             Submit = new FlagSubmit(ClientSocket);
             Submit.Show();
         }
-
-        public void SendCallback(IAsyncResult AR)
-        {
-            try
-            {
-                ClientSocket.EndSend(AR);
-            }
-            catch (SocketException)
-            {
-                ClientSocket.Close();
-                Parent.MainFrame.Content = new ConnectScreen(Parent);
-            }
-        }
-
+        
         private void Command(string command)
         {
-            byte[] data = Encoding.ASCII.GetBytes(command);
-            ClientSocket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, ClientSocket);
+            byte[] data = Encoding.ASCII.GetBytes("command " + command);
+            byte[] wrappedData = NSHG.PacketProtocol.WrapMessage(data);
+            
+            ClientSocket.BeginSend(wrappedData, 0, wrappedData.Length, SocketFlags.None, SendCallback, ClientSocket);
 
         }
 

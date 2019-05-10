@@ -165,8 +165,6 @@ namespace Server
                     Log("Stoping");
                     TickTimer.Enabled = false;
                     break;
-                case "help":
-                    break;
                 case "network":
                     if (!networkloaded)
                     {
@@ -217,11 +215,22 @@ namespace Server
                         break;
                     }
                     if (network.report(tmpfilepath)) Log("Successfull generated report at " + tmpfilepath);
-                    Log("Invalid filepath");
+                    else Log("Invalid filepath");
+                    break;
+                case "help":
+                    Log("load filepath            -Loads a system from the specified filepath");
+                    Log("tick                     -Ticks the network once");
+                    Log("start                    -Starts the ticking of the network");
+                    Log("stop                     -Stops the ticking of the network");
+                    Log("tickrate MSBetweenTicks  -Sets the ms delay between each tick default 200 ms lower = more ticks per seccond");
+                    Log("network                  -Displays each system in the network, its ID and its Type");
+                    Log("as SystemID [command]    -Runs a command on selected system, use 'as [systemID] help' for more info");
+                    Log("report filepath          -Generates a report of the users collected flags and times collected at");
+                    Log("save filepath            -Saves the current network - Wanring doesn't save progress & should only be use for debugging, to see user progress use 'report'");
                     break;
                 default:
                     Log("Unknown command: " + commandlist[0]);
-                    Log("Use the help command for a list of commands");
+                    Log("Use the 'help' command for a list of commands");
                     break;
 
 
@@ -230,7 +239,14 @@ namespace Server
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            Command(CommandsIn.Text);
+            string command = CommandsIn.Text;
+            command = command.Trim();
+
+            CommandsIn.Text = "";
+            Log("=> " + command);
+            CommandLog.Add(command);
+            upto = CommandLog.Count;
+            Command(command);
         }
 
         private void CommandsIn_PreviewKeyDown(object sender, KeyEventArgs e)

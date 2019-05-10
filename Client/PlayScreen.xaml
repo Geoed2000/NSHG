@@ -19,7 +19,7 @@
         </Grid.ColumnDefinitions>
 
         <ScrollViewer x:Name="SystemScrollView" Grid.Row="0">
-            <TextBlock x:Name="SystemLogBox" FontFamily="Consolas"/>
+            <TextBox x:Name="SystemLogBox" FontFamily="Consolas" Background="Transparent" BorderThickness="0" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"/>
         </ScrollViewer>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -31,7 +31,7 @@
         </Grid>
         
         <ScrollViewer x:Name="ScenarioScrollView" Grid.Column="1">
-            <TextBlock x:Name="ScenarioLogBox" FontFamily="Consolas"/>
+            <TextBox x:Name="ScenarioLogBox" FontFamily="Consolas" Background="Transparent" BorderThickness="0" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"/>
         </ScrollViewer>
         <Button x:Name="FlagSubmitButton" Grid.Column="1" Grid.Row="1" Width="100" Click="FlagSubmitButton_Click">Flag Submit</Button>
 

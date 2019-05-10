@@ -8,9 +8,11 @@ namespace NSHG.Applications
     {
         public List<string> log;
         public Action<string> Log;
+        public bool closed;
 
         public Application(Action<string> Log = null)
         {
+            closed = false;
             log = new List<string>();
             this.Log += Log;
             this.Log += log.Add;

@@ -410,14 +410,12 @@ namespace NSHG.Applications
         
         public override void OnTick(uint tick)
         {
-            Log("DHCPClient Ticking");
             foreach (session s in sessions.Values) s.OnTick(tick);
         }
         public override void Command(string commandstring)
         { 
 
         }
-
     }
 
     public class DHCPServer : Application

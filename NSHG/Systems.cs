@@ -48,7 +48,7 @@ namespace NSHG
             }
             this.respondToEcho = Respondtoecho;
 
-            OnCorruptPacket += (n, a) => { Log("Corrupt packet on: " + ID); };
+            OnCorruptPacket += (n, a) => { LocalLog("Corrupt packet on: " + ID); };
 
             OnTick += AdapterTick;
             OnTick += ApplicationTick;
@@ -125,7 +125,7 @@ namespace NSHG
             }
             else
             {
-                Log("Packet not for " + ID + " Addressed to: " + Data.DestinationAddress + " Recieved at:  " + a.LocalIP);
+                LocalLog("Packet not for " + ID + " Addressed to: " + Data.DestinationAddress + " Recieved at:  " + a.LocalIP);
                 OnNotForMe?.Invoke(Data, a);
             }
         }
@@ -159,17 +159,16 @@ namespace NSHG
 
         protected virtual void AppsInit()
         {
-            Log("Apps Init System");
             DHCPClient c = new DHCPClient(this, new List<NetworkInterface>(NetworkInterfaces.Values));
             AddApp(c);
             RoutingTable = new RoutingTable(this);
             AddApp(RoutingTable);
         } 
-        public bool AddApp(Application app)
+        public bool AddApp(Application app, int start = 0)
         {
-            for (int i = 0; i < Apps.Length; i++)
+            for (int i = start; i < Apps.Length; i++)
             {
-                if (Apps[i] == null)
+                if (Apps[i] == null ||  (Apps[i]?.closed ?? false))
                 {
                     Apps[i] = app;
                     app.Log += s => LocalLog(i + "> " + s);
@@ -212,11 +211,11 @@ namespace NSHG
                             case "networkinterfaces":
                                 foreach (NetworkInterface n in NetworkInterfaces.Values)
                                 {
-                                    Log("Name:------- " + n.Name + "\n" +
-                                        "MacAddress:- " + n.MyMACAddress + "\n" +
-                                        "Local IP:--- " + n.LocalIP + "\n" +
-                                        "NetMask:---- " + n.SubnetMask + "\n" +
-                                        "Type Of:---- " + n.GetType());
+                                    LocalLog("Name:------- " + n.Name);
+                                    LocalLog("MacAddress:- " + n.MyMACAddress);
+                                    LocalLog("Local IP:--- " + n.LocalIP);
+                                    LocalLog("NetMask:---- " + n.SubnetMask);
+                                    LocalLog("Type Of:---- " + n.GetType());
                                 }
                                 break;
                             case "apps":
@@ -225,7 +224,7 @@ namespace NSHG
                                 {
                                     if (Apps[i] != null)
                                     {
-                                        Log("   Slot: " + i + "  Type: " + Apps[i].GetType());
+                                        LocalLog("   Slot: " + i + "  Type: " + Apps[i].GetType());
                                     }
                                 }
                                 break;
@@ -240,7 +239,7 @@ namespace NSHG
                                         {
                                             foreach (string s in Apps[id]?.log)
                                             {
-                                                Log("   " + s);
+                                                LocalLog("   " + s);
                                             }
                                         }
                                         
@@ -248,21 +247,32 @@ namespace NSHG
                                     }
                                     catch (FormatException)
                                     {
-                                        Log("Error parsing Slot");
+                                        LocalLog("Error parsing Slot");
                                     }
                                     catch (OverflowException)
                                     {
-                                        Log("Error, Slot too large, overflow");
+                                        LocalLog("Error, Slot too large, overflow");
                                     }
                                     catch (IndexOutOfRangeException)
                                     {
-                                        Log("Error, Slot to large, out of range");
+                                        LocalLog("Error, Slot to large, out of range");
                                     }
                                 }
+                                break;
+                            case "help":
+                                LocalLog("view item");
+                                LocalLog("    networkinterfaces  -Dispalys info of each network interface");
+                                LocalLog("    apps               -Displays list of loaded application");
+                                LocalLog("    app appNo          -Displays log of selected appliation");
+                                LocalLog("    help               -Displays this help screen");
+                                break;
+                            default:
+                                LocalLog("invalid parameter " + Command[1] + "  use 'view help' for more info");
                                 break;
                         }
                     }
                     break;
+
                 case "as":
                     if (Command.Length > 1)
                     {
@@ -285,33 +295,75 @@ namespace NSHG
                                     }
                                     catch (FormatException)
                                     {
-                                        Log("Error parsing Slot");
+                                        LocalLog("Error parsing Slot");
                                     }
                                     catch (OverflowException)
                                     {
-                                        Log("Error, Slot too large, overflow");
+                                        LocalLog("Error, Slot too large, overflow");
                                     }
                                     catch (IndexOutOfRangeException)
                                     {
-                                        Log("Error, Slot to large, out of range");
+                                        LocalLog("Error, Slot too large, out of range");
                                     }
                                 }
                                 else
                                 {
-                                    Log("Must specify a app to act as");
+                                    LocalLog("Must specify a app to act as");
                                 }
-                                break;
-                            case "networkinterface":
-
                                 break;
                         }
                     }
                     break;
-                case "new":
 
+                case "start":
+                    if (Command.Length > 1)
+                    {
+                        if (int.TryParse(Command[1],out int app))
+                        {
+                            bool isNull = Apps[app] == null;
+                            bool isClosed = false;
+                            if (!isNull) isClosed = Apps[app].closed;
+
+                            if (!(isNull || isClosed))
+                            {
+                                if (Command.Length > 1)
+                                {
+                                    switch (Command[2].ToLower())
+                                    {
+                                        case "packetsniffer":
+                                            PacketSniffer a = new PacketSniffer();
+                                            OnRecievedPacket += (b, s) => { a.onPacket(b); };
+                                            AddApp(a, app);
+                                            break;
+                                        default:
+                                            LocalLog("Invalid application " + Command[2]);
+                                            break;
+
+                                    }
+                                }
+                            }
+                        }
+                        else if(Command[1].ToLower() == "help")
+                        {
+                            LocalLog("start slot application");
+                            LocalLog("    slot - intiger application slot, use 'view apps' to see available slots");
+                            LocalLog("    application - name of application to start");
+                            LocalLog("       packetsniffer");
+
+                        }
+                        else
+                        {
+                            LocalLog("Invalid application slot: " + Command[1]);
+                        }
+                    }
                     break;
-                case "help":
 
+                case "help":
+                    LocalLog("view item otherparams   -shows infomation about selected item");
+                    LocalLog("as item identifier      -runs a command as the selected item");
+                    LocalLog("start slot application  -starts application in selected slot");
+                    LocalLog("help                    -shows this help text");
+                    LocalLog("use '[command] help' for more help with a spesific command");
                     break;
             }
         }
@@ -464,104 +516,6 @@ namespace NSHG
         }
     }
 
-    //public class PC : System
-    //{
-    //    public new XmlNode ToXML(XmlDocument doc)
-    //    {
-    //        XmlNode parent = doc.CreateElement("PC");
-
-    //        XmlNode IDNode = doc.CreateElement("ID");
-    //        IDNode.InnerText = this.ID.ToString();
-    //        parent.AppendChild(IDNode);
-
-    //        XmlNode RespondToEchoNode = doc.CreateElement("RespondToEcho");
-    //        RespondToEchoNode.InnerText = this.respondToEcho.ToString();
-    //        parent.AppendChild(RespondToEchoNode);
-
-    //        foreach (NetworkInterface a in NetworkInterfaces.Values)
-    //        {
-    //            parent.AppendChild(a.ToXML(doc));
-    //        }
-
-    //        return parent;
-    //    }
-
-    //    public new static PC FromXML(XmlNode Parent)
-    //    {
-    //        uint ID = 0;
-    //        Dictionary<MAC, NetworkInterface> NetworkInterfaces = new Dictionary<MAC, NetworkInterface>();
-    //        bool respondToEcho = true;
-
-    //        foreach (XmlNode n in Parent.ChildNodes)
-    //        {
-    //            switch (n.Name.ToLower())
-    //            {
-    //                case "id":
-    //                    if (!uint.TryParse(n.InnerText, out ID))
-    //                    {
-    //                        Console.ForegroundColor = ConsoleColor.Red;
-    //                        Console.WriteLine("failed to read ID");
-    //                        Console.ForegroundColor = ConsoleColor.White;
-    //                    }
-    //                    break;
-    //                case "adapter":
-    //                    try
-    //                    {
-    //                        Adapter a = Adapter.FromXML(n);
-    //                        NetworkInterfaces.Add(a.MyMACAddress, a);
-    //                    }
-    //                    catch
-    //                    {
-    //                        Console.ForegroundColor = ConsoleColor.Red;
-    //                        Console.WriteLine("Failed to read adapter");
-    //                        Console.ForegroundColor = ConsoleColor.White;
-    //                    }
-    //                    break;
-    //                case "groupadapter":
-    //                    try
-    //                    {
-    //                        GroupAdapter a = GroupAdapter.FromXML(n);
-    //                        NetworkInterfaces.Add(a.MyMACAddress, a);
-    //                    }
-    //                    catch
-    //                    {
-    //                        Console.ForegroundColor = ConsoleColor.Red;
-    //                        Console.WriteLine("Failed to read groupadapter");
-    //                        Console.ForegroundColor = ConsoleColor.White;
-    //                    }
-    //                    break;
-    //                case "respondtoecho":
-    //                    try
-    //                    {
-    //                        respondToEcho = bool.Parse(n.InnerText);
-    //                    }
-    //                    catch
-    //                    {
-    //                        Console.ForegroundColor = ConsoleColor.Red;
-    //                        Console.WriteLine("Failed to read flag: respondtoecho");
-    //                        Console.ForegroundColor = ConsoleColor.White;
-    //                    }
-    //                    break;
-    //            }
-    //        }
-    //        if (ID == 0)
-    //        {
-    //            throw new Exception("Invalid System XML ID not Specified");
-    //        }
-
-    //        return new PC(ID, NetworkInterfaces, respondToEcho);
-
-
-    //    }
-
-    //    protected override void AppsInit()
-    //    {
-    //        Apps.Add(new DHCPClient(this, new List<NetworkInterface>(NetworkInterfaces.Values)));
-    //        RoutingTable = new SystemRoutingTable(this);
-    //        Apps.Add(RoutingTable);
-    //    }
-    //}
-
     public class Router : System
     {
         public Router(uint ID, Dictionary<MAC, NetworkInterface> NetworkInterfaces, int maxapps = 10, bool RespToEcho = true, bool initapps = true, Action<string> Log = null) : base(ID, NetworkInterfaces, RespToEcho, maxapps, false, Log)
@@ -571,10 +525,9 @@ namespace NSHG
 
         protected override void AppsInit()
         {
-            Log("Apps Init Router");
+            
             foreach (NetworkInterface n in NetworkInterfaces.Values)
             {
-                Log(n.GetType().ToString());
                 if (n.GetType() == typeof(GroupAdapter))
                 {
                     DHCPServer s = new DHCPServer(this,n,n.LocalIP);
@@ -673,9 +626,4 @@ namespace NSHG
 
         }
     }
-
-    //public class EchoServer : System
-    //{
-
-    //}
 }

@@ -13,7 +13,7 @@
         </Grid.RowDefinitions>
         
         <ScrollViewer x:Name="ScrollView" Grid.Row="0">
-            <TextBlock x:Name="LogBox" FontFamily="Consolas"/>
+            <TextBox x:Name="LogBox" FontFamily="Consolas" Background="Transparent" BorderThickness="0" Text="{Binding Text, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"/>
         </ScrollViewer>
         <StackPanel Grid.Row="1" Orientation="Horizontal">
             <TextBox x:Name="CommandsIn" AcceptsReturn="False" PreviewKeyDown="CommandsIn_PreviewKeyDown" Margin="5,1,0,1" Width="695" Text="load sys1.xml"/>
