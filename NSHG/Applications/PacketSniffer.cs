@@ -24,79 +24,92 @@ namespace NSHG.Applications
         {
             if (on)
             {
-                IPv4Header ip = new IPv4Header(datagram);
-                Log("Version:             " + ip.Version);
-                Log("HeaderLength:        " + ip.IHL);
-                Log("Type Of Service      " + ip.TOS);
-                Log("Total Length         " + ip.Length);
-                Log("Identification       " + ip.Identification);
-                Log("Reserved             " + ip.RES);
-                Log("Don't Fragment       " + ip.DF);
-                Log("More Fragments       " + ip.MF);
-                Log("Fragment Offset      " + ip.FragmentOffset);
-                Log("Time To Live         " + ip.TTL);
-                Log("Protocol             " + ip.Protocol);
-                Log("Checksum             " + ip.HeaderChecksum);
-                Log("Source Address       " + ip.SourceAddress);
-                Log("Destination Address  " + ip.DestinationAddress);
-                Log("----------------------------------------");
-
-                switch (ip.Protocol)
+                IPv4Header iP = new IPv4Header(datagram);
+                if (ip)
+                {
+                    Log("----------------IP----------------");
+                    Log("Version:             " + iP.Version);
+                    Log("HeaderLength:        " + iP.IHL);
+                    Log("Type Of Service      " + iP.TOS);
+                    Log("Total Length         " + iP.Length);
+                    Log("Identification       " + iP.Identification);
+                    Log("Reserved             " + iP.RES);
+                    Log("Don't Fragment       " + iP.DF);
+                    Log("More Fragments       " + iP.MF);
+                    Log("Fragment Offset      " + iP.FragmentOffset);
+                    Log("Time To Live         " + iP.TTL);
+                    Log("Protocol             " + iP.Protocol);
+                    Log("Checksum             " + iP.HeaderChecksum);
+                    Log("Source Address       " + iP.SourceAddress);
+                    Log("Destination Address  " + iP.DestinationAddress);
+                    Log("----------------------------------------");
+                }
+                
+                switch (iP.Protocol)
                 {
                     case IPv4Header.ProtocolType.ICMP:
-                        ICMPEchoRequestReply icmp = new ICMPEchoRequestReply(ip.Datagram);
+                        ICMPEchoRequestReply icmp = new ICMPEchoRequestReply(iP.Datagram);
                         break;
 
                     case IPv4Header.ProtocolType.UDP:
-                        UDPHeader udp = new UDPHeader(ip.Datagram);
-                        Log("Source Port       " + udp.SourcePort);
-                        Log("Destination Port  " + udp.DestinationPort);
-                        Log("Length            " + udp.Length);
-                        Log("Checksum          " + udp.Checksum);
-                        Log("----------------------------------------");
-                        DHCPDatagram dHCP = new DHCPDatagram(udp.Datagram);
-                        Log("Op                ");
-                        Log("htype             ");
-                        Log("hlen              ");
-                        Log("hops              ");
-                        Log("transaction ID    ");
-                        Log("Secconds Elapsed  ");
-                        Log("Flags");
-                        Log("    Boradcast     ");
-                        Log("Client IP         ");
-                        Log("Your IP           ");
-                        Log("Server IP         ");
-                        Log("Router IP         ");
-                        Log("Client MAC        ");
-                        Log("Server Host Name  ");
-                        Log("Boot File Name    ");
-                        Log("Options");
-                        foreach(DHCPOption option in dHCP.options)
+                        UDPHeader uDP = new UDPHeader(iP.Datagram);
+                        if (udp)
                         {
-                            switch (option.tag)
-                            {
-                                case Tag.subnetmask:
-                                    Log("    SubnetMask         " + new IP(option.data).ToString());
-                                    break;
-                                case Tag.defaultIPTTL:
-                                    Log("    Default TTL        " + option.data[0]);
-                                    break;
-                                case Tag.addressRequest:
-                                    Log("    Requested IP       " + new IP(option.data).ToString());
-                                    break;
-                                case Tag.addressTime:
-                                    Log("    Lease Time         " + BitConverter.ToUInt16(option.data,0));
-                                    break;
-                                case Tag.router:
-                                    Log("    DHCP Message Type  " + option.data[0]);
-                                    break;
-                                case Tag.paramaterList:
-                                    Log("    Paramater List  ");
-                                    foreach (byte b in option.data) Log("        " + b);
-                                    break;
-                            }
+                            Log("----------------UDP----------------");
+                            Log("Source Port       " + uDP.SourcePort);
+                            Log("Destination Port  " + uDP.DestinationPort);
+                            Log("Length            " + uDP.Length);
+                            Log("Checksum          " + uDP.Checksum);
+                            Log("----------------------------------------");
                         }
-                        Log("----------------------------------------");
+
+                        DHCPDatagram dHCP = new DHCPDatagram(uDP.Datagram);
+                        if (dhcp)
+                        {
+                            Log("----------------DHCP----------------");
+                            Log("Op                ");
+                            Log("htype             ");
+                            Log("hlen              ");
+                            Log("hops              ");
+                            Log("transaction ID    ");
+                            Log("Secconds Elapsed  ");
+                            Log("Flags");
+                            Log("    Boradcast     ");
+                            Log("Client IP         ");
+                            Log("Your IP           ");
+                            Log("Server IP         ");
+                            Log("Router IP         ");
+                            Log("Client MAC        ");
+                            Log("Server Host Name  ");
+                            Log("Boot File Name    ");
+                            Log("Options");
+                            foreach (DHCPOption option in dHCP.options)
+                            {
+                                switch (option.tag)
+                                {
+                                    case Tag.subnetmask:
+                                        Log("    SubnetMask         " + new IP(option.data).ToString());
+                                        break;
+                                    case Tag.defaultIPTTL:
+                                        Log("    Default TTL        " + option.data[0]);
+                                        break;
+                                    case Tag.addressRequest:
+                                        Log("    Requested IP       " + new IP(option.data).ToString());
+                                        break;
+                                    case Tag.addressTime:
+                                        Log("    Lease Time         " + BitConverter.ToUInt16(option.data, 0));
+                                        break;
+                                    case Tag.router:
+                                        Log("    DHCP Message Type  " + option.data[0]);
+                                        break;
+                                    case Tag.paramaterList:
+                                        Log("    Paramater List  ");
+                                        foreach (byte b in option.data) Log("        " + b);
+                                        break;
+                                }
+                            }
+                            Log("----------------------------------------");
+                        }
                         break;
                 }
             }

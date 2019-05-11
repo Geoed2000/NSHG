@@ -68,7 +68,67 @@ namespace NSHG.Applications
 
         public override void Command(string CommandString)
         {
+            string[] Commands = CommandString.Split(' ');
+            if (Commands.Length > 0)
+            {
+                switch (Commands[0])
+                {
+                    case "add":
+                        if (Commands.Length == 6)
+                        {
+                            Entry e = new Entry();
+                            try
+                            {
+                                e.Destination = IP.Parse(Commands[1]);
+                                e.Netmask = IP.Parse(Commands[2]);
+                                if(Commands[2].ToLower() != "null")
+                                {
+                                    e.Gateway = IP.Parse(Commands[3]);
+                                }
+                                e.Interface = MAC.Parse(Commands[4]);
+                                e.Metric = uint.Parse(Commands[5]);
+                                NewStaticEntry(e);
+                            }
+                            catch
+                            {
+                                Log("Unable to Parse Parameters");
+                            }
+                        }
+                        if ((Commands?[1] ?? "") == "help")
+                        {
+                            Log("add [Destination IP] [Subnetmask] [Gateway] [Interface] [Metric]");
+                            Log("    [Destination IP]  Destination packet will be compared with");
+                            Log("    [Subnet Mask]     Subnetmask that will be applied to packet when comparing with destination IP");
+                            Log("    [Gateway]         Gateway Packet could be forwarded to be, use 'null' if no gateway is used");
+                            Log("    [Interface]       The Mac address of the Network Interface that the packet will be sent on");
+                            Log("    [Metric]          The Metric of the rule aka its weight, if it is higher it will be picked over other rules that accept the destination");
+                        }
+                        else
+                        {
+                            Log("Invalid parameters use 'add help' for more info");
+                        }
+                        break;
+                    case "table":
+                        Log("Destination    Netmask       Gateway    interface       metric"); 
+                        foreach(Entry e in Entries.Values)
+                        {
+                            Log(e.Destination + "   " + e.Netmask + "   " + e.Gateway ?? "null" + "   " + e.Interface + "   " + e.Metric);
+                        }
 
+                        Log(" ");
+                        Log("Static Entries");
+                        foreach(Entry e in StaticEntries.Values)
+                        {
+                            Log(e.Destination + "   " + e.Netmask + "   " + e.Gateway + "   " + e.Interface + "   " + e.Metric);
+                        }
+                        break;
+                    case "help":
+                        Log("add [Destination IP] [Subnetmask] [Gateway] [Interface] [Metric]  -Adds a new static route");
+                        Log("Table  -displays routing table");
+                        break;
+                    
+                }
+            }
         }
     }
 
@@ -76,7 +136,6 @@ namespace NSHG.Applications
     {
 
         private static Random rand = new Random();
-
         uint nextUpdateTick = 0;
         
         public SystemRoutingTable(System s) : base(s)
@@ -144,6 +203,13 @@ namespace NSHG.Applications
                 GenerateTable();
                 nextUpdateTick += (uint)rand.Next(50, 200);
             }
+        }
+
+        public override void Command(string CommandString)
+        {
+
+
+            base.Command(CommandString);
         }
     }
 }

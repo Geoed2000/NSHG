@@ -451,6 +451,7 @@ namespace NSHG.Applications
         readonly IP ThisIP;
         IP SubnetMask;
         IP DNS = new IP(new byte[4] { 1, 1, 1, 1 });
+        object Leaseslock = new object();
         
         public SortedList<IP, Lease> Leases = new SortedList<IP, Lease>();
         public SortedList<IP, Lease> Reserved = new SortedList<IP, Lease>();
@@ -469,17 +470,20 @@ namespace NSHG.Applications
         
         public bool isAvailable(IP ip, MAC client)
         {
-            if (Leases.ContainsKey(ip))
+            lock (Leaseslock)
             {
-                if (Leases[ip].chaddr == client) return true;
-                else return false;
+                if (Leases.ContainsKey(ip))
+                {
+                    if (Leases[ip].chaddr == client) return true;
+                    else return false;
+                }
+                if (Reserved.ContainsKey(ip))
+                {
+                    if ((bool)Reserved[ip].chaddr?.Equals(client)) return true;
+                    else return false;
+                }
+                else return true;
             }
-            if (Reserved.ContainsKey(ip))
-            {
-                if ((bool)Reserved[ip].chaddr?.Equals(client)) return true;
-                else return false;
-            }
-            else return true;
         }
         public IP NewAddress(MAC client)
         {
@@ -551,14 +555,18 @@ namespace NSHG.Applications
 
                                         if (isAvailable(Request, dHCP.chaddr))
                                         {
-                                            if (Reserved.ContainsKey(Request))
-                                                Reserved.Remove(Request);
-                                            if (Leases.ContainsKey(Request))
-                                                Leases.Remove(Request);
-                                            Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(1200, 1800));
-                                            Leases.Add(l.ciaddr, l);
-                                            ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
-                                            Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
+                                            lock (Leaseslock)
+                                            {
+                                                if (Reserved.ContainsKey(Request))
+                                                    Reserved.Remove(Request);
+                                                if (Leases.ContainsKey(Request))
+                                                    Leases.Remove(Request);
+                                                Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(1200, 1800));
+                                                Leases.Add(l.ciaddr, l);
+                                                ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
+                                                Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
+                                            }
+                                            
                                         }
                                         else
                                         {
@@ -588,9 +596,12 @@ namespace NSHG.Applications
             currentTick++;
             if (tick % 10 == 0)
             {
-                foreach (Lease l in Leases.Values)
+                lock (Leaseslock)
                 {
-                    if (l.LeaseStartTick + l.LeaseLength < tick && l.LeaseLength != 0) Leases.Remove(l.ciaddr);
+                    foreach (Lease l in Leases.Values)
+                    {
+                        if (l.LeaseStartTick + l.LeaseLength < tick && l.LeaseLength != 0) Leases.Remove(l.ciaddr);
+                    }
                 }
             }
         }
@@ -610,11 +621,13 @@ namespace NSHG.Applications
                                 Log("Gateway IP Address " + GatewayIP?.ToString());
                                 Log("DNS IP Address " + DNS?.ToString());
                                 Log("Leases");
-                                foreach (Lease L in Leases.Values)
+                                lock (Leaseslock)
                                 {
-                                    Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    foreach (Lease L in Leases.Values)
+                                    {
+                                        Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    }
                                 }
-
                                 break;
                             case "networkinterface":
                                 Log("networkinterface " + NetInterface?.Name + " with macaddress " + NetInterface?.MyMACAddress.ToString());
@@ -627,10 +640,14 @@ namespace NSHG.Applications
                                 break;
                             case "leases":
                                 Log("Leases");
-                                foreach(Lease L in Leases.Values)
+                                lock (Leaseslock)
                                 {
-                                    Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    foreach (Lease L in Leases.Values)
+                                    {
+                                        Log("    Lease of " + L.ciaddr + " to " + L.chaddr + " starting at tick " + L.LeaseStartTick + " for " + L.LeaseLength + "ticks");
+                                    }
                                 }
+                                
                                 break;
                         }
                     }

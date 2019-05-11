@@ -14,7 +14,7 @@ namespace NSHG.Applications
         {
             closed = false;
             log = new List<string>();
-            this.Log += Log;
+            this.Log += Log ?? Console.WriteLine;
             this.Log += log.Add;
         }
         

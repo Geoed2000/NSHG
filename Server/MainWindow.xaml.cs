@@ -75,22 +75,33 @@ namespace Server
                 }
                 else return;
             }
-            Log("Tick Start");
+            //Log("Tick Start");
             tick++;
             //Log("The Elapsed event was raised at " + e.SignalTime.Hour + "." + e.SignalTime.Minute + "." + e.SignalTime.Second + "." + e.SignalTime.Millisecond);
             //Log("Tick " + tick + " Started at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond );
-            network.Tick(tick);
-            //Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
-            if (tick % 10 == 0)
+            try
             {
-                Log("tick " + tick);
+                network.Tick(tick);
             }
+            catch (Exception ex)
+            {
+                Log(ex.ToString());
+            }
+            finally
+            {
+                if (tick % 10 == 0)
+                {
+                    Log("tick " + tick);
+                }
 
-            lock (TIPLock)
-            {
-                TickInProgress = false;
+                lock (TIPLock)
+                {
+                    TickInProgress = false;
+                }
             }
-            Log("Tick fin");
+            //Log("Tick " + tick + " Ended at " + DateTime.Now.Minute + "." + DateTime.Now.Second + "." + DateTime.Now.Millisecond);
+            
+            //Log("Tick fin");
         }
         
         public void Log(string log)

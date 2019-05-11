@@ -311,6 +311,9 @@ namespace NSHG
                                     LocalLog("Must specify a app to act as");
                                 }
                                 break;
+                            default:
+                                LocalLog("Must specify a type to act as");
+                                break;
                         }
                     }
                     break;
@@ -321,10 +324,10 @@ namespace NSHG
                         if (int.TryParse(Command[1],out int app))
                         {
                             bool isNull = Apps[app] == null;
-                            bool isClosed = false;
+                            bool isClosed = true;
                             if (!isNull) isClosed = Apps[app].closed;
 
-                            if (!(isNull || isClosed))
+                            if (isNull || isClosed)
                             {
                                 if (Command.Length > 1)
                                 {
@@ -333,7 +336,8 @@ namespace NSHG
                                         case "packetsniffer":
                                             PacketSniffer a = new PacketSniffer();
                                             OnRecievedPacket += (b, s) => { a.onPacket(b); };
-                                            AddApp(a, app);
+                                            if (AddApp(a, app)) LocalLog("Successfully added App");
+                                            else LocalLog("Failed to add App");
                                             break;
                                         default:
                                             LocalLog("Invalid application " + Command[2]);
@@ -341,6 +345,14 @@ namespace NSHG
 
                                     }
                                 }
+                                else
+                                {
+                                    Log("Pleace specify an application to start");
+                                }
+                            }
+                            else
+                            {
+                                LocalLog("Invalid app slot, app already exists there");
                             }
                         }
                         else if(Command[1].ToLower() == "help")

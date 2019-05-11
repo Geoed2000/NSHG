@@ -1,19 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Root>
-  <Player>
+  <Router>
     <ID>1</ID>
     <RespondToEcho>True</RespondToEcho>
-    <Adapter>
+    <GroupAdapter>
       <name>Adapter 1</name>
       <sysid>1</sysid>
-      <mac>6D:4D:F2:48:69:B4</mac>
-      <localip>192.168.1.2</localip>
+      <mac>6D:4D:F2:4C:A3:16</mac>
+      <localip>192.168.1.1</localip>
       <subnetmask>255.255.255.0</subnetmask>
       <defaultgateway>192.168.1.1</defaultgateway>
-      <connectedsystem>3</connectedsystem>
+      <connectedsystems>
+        <ID>2</ID>
+        <ID>3</ID>
+        <ID>4</ID>
+        <ID>5</ID>
+        <ID>6</ID>
+        <ID>7</ID>
+        <ID>8</ID>
+        <ID>9</ID>
+      </connectedsystems>
       <connected>True</connected>
-    </Adapter>
-   </Player>
+    </GroupAdapter>
+   </Router>
   
   <Player>
     <ID>2</ID>
@@ -22,50 +31,164 @@
       <name>Adapter 1</name>
       <sysid>2</sysid>
       <mac>6D:4D:F2:48:69:B4</mac>
-      <localip>192.168.1.3</localip>
-      <subnetmask>255.255.255.0</subnetmask>
-      <defaultgateway>192.168.1.1</defaultgateway>
-      <connectedsystem>3</connectedsystem>
+      <connectedsystem>1</connectedsystem>
       <connected>True</connected>
     </Adapter>
    </Player>
   
-  <Router>
+  <Player>
     <ID>3</ID>
     <RespondToEcho>True</RespondToEcho>
-    <GroupAdapter>
+    <Adapter>
       <name>Adapter 1</name>
       <sysid>3</sysid>
-      <mac>6D:4D:F2:4C:A3:16</mac>
-      <localip>192.168.1.1</localip>
-      <subnetmask>255.255.255.0</subnetmask>
-      <defaultgateway>192.168.1.1</defaultgateway>
-      <connectedsystems>
-        <ID>1</ID>
-        <ID>2</ID>
-      </connectedsystems>
+      <mac>6D:4D:F2:FA:C2:27</mac>
+      <connectedsystem>1</connectedsystem>
       <connected>True</connected>
-    </GroupAdapter>
-   </Router>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>4</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>4</sysid>
+      <mac>6D:4D:F2:99:AC:38</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>5</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>5</sysid>
+      <mac>6D:4D:F2:79:55:68</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>6</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>6</sysid>
+      <mac>6D:4D:F2:94:83:CA</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>7</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>7</sysid>
+      <mac>6D:4D:F2:2B:0F:06</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>8</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>8</sysid>
+      <mac>6D:4D:F2:69:53:7F</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>9</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>9</sysid>
+      <mac>6D:4D:F2:DD:46:89</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
   
   <Flag>
-    <id>6D4DF24CA316</id>
-    <mark>Flag1</mark>
+    <id>flag one</id>
+    <mark>Submitting a flag</mark>
   </Flag>
   
+  <Flag>
+    <id>start 7 packetsniffer</id>
+    <mark>launch Packetsniffer in slot 7</mark>
+  </Flag>
+  
+  <Flag>
+    <id>as app 7 start</id>
+    <mark>Run a command on a application</mark>
+  </Flag>
+  
+  <Connection>
+    <ID>1</ID>
+    <ID>2</ID>
+  </Connection>
   <Connection>
     <ID>1</ID>
     <ID>3</ID>
   </Connection>
   <Connection>
-    <ID>2</ID>
-    <ID>3</ID>
+    <ID>1</ID>
+    <ID>4</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>5</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>6</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>7</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>8</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>9</ID>
   </Connection>
 
   
   <Scenario>
-      <message Tick="1" Text="Tick 1"/>
-      <message Tick="10" Text="Tick 10"/>
-      <message Tick="20" Text="Tick 20"/>
+    <message Tick="1" Text="Welcome to the first scenario in the NSHG. This scenario is meant to teach the basics of the userinterface and the tools at your disposal"/>
+    <message Tick="50" Text="In the NSHG you are marked on the flags that you submit to the server. the first flag is Flag one"/>
+    <message Tick="100" Text="Press the flag submit button under this text and enter Flag one into the text box, then press submit"/>
+    <message Tick="150" Text="All being well you will have just submitted your first ever flag, congratulations! The seccond flag, and all subsequent ones won't be as easy"/>
+    <message Tick="250" Text="---Flag 2---"/>
+    <message Tick="300" Text="For this flag you must start a new application"/>
+    <message Tick="350" Text="In NSHG you have an interface to a system, seen on the left of this text, You may have seen some text pop us as you have been doing the previous flag, ignore this for now"/>
+    <message Tick="400" Text="The system you are interfacing with has its own command system you can run help to see the different commands you can run, try running help on the system by typing help into the text box on the left and pressing the return key, or the enter button on the screen"/>
+    <message Tick="550" Text="Now run the command start and start an instance of the packetsnigger application in app slot 7"/>
+    <message Tick="700" Text="Flag 2 is the command that you just ran"/>
+    <message Tick="750" Text="---Flag 3---"/>
+    <message Tick="800" Text="lastly you will learn how to run a command on an application"/>
+    <message Tick="825" Text="This will use the 'as' command\nthis is used run a command as an application for example to run a command of the packet sniffer you just initiated you would run as app 7 [command]"/>
+    <message Tick="875" Text="Try running the help command on the packet sniffer."/>
+    <message Tick="900" Text="The third flag is the command you would need to run in order to start listening for packets with the packet sniffer\n (use app not application for the command)"/>
+   
+    
+    <message Tick="1000" Text="fin"/>
+    
+    
   </Scenario>
 </Root>
