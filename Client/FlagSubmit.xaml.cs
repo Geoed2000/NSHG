@@ -39,7 +39,8 @@ namespace Client
             if (!(FlagIn.Text.Trim() == ""))
             {
                 byte[] data = Encoding.ASCII.GetBytes("flag " + FlagIn.Text);
-                client.BeginSend(data, 0, data.Length, SocketFlags.None, null, null);
+                byte[] wrappedData = NSHG.PacketProtocol.WrapMessage(data);
+                client.BeginSend(wrappedData, 0, wrappedData.Length, SocketFlags.None, null, null);
             }
         }
     }

@@ -164,6 +164,7 @@ namespace NSHG
         }
         public static IP operator ~(IP ip1)
         {
+            if (IP.isNull(ip1)) return null;
             byte[] bytes = new byte[4];
             for (int i = 0; i < 4; i++)
             {

@@ -147,7 +147,7 @@ namespace NSHG
             users = new List<User>();
             UnallocatedPlayers = new List<uint>();
             TakenMacAddresses = new List<MAC>();
-
+            starttime = DateTime.Now;
             
             Log = log ?? Console.WriteLine;
             
@@ -302,22 +302,22 @@ namespace NSHG
                 case "flag":
                     if (split.Length > 1)
                     {
+                        string request = text.Remove(0, 5);
                         var query =
                             from flag in Flags
-                            where (flag.Item1.ToString() == split[1])
+                            where (flag.Item1.ToString().ToLower() == request.ToLower().Trim())
                             select flag;
                         if (query.ToArray().Length == 0)
                         {
-                            data = Encoding.ASCII.GetBytes("flag error invalid flag");
-                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, current.Socket);
+                            
+                            current.Send("flag error invalid flag");
                             break;
                         }
                         else
                         {
                             foreach (Tuple<string, string> t in query)
                                 current.flags.Add(new Tuple<string, TimeSpan>(t.Item1, DateTime.Now - starttime));
-                            data = Encoding.ASCII.GetBytes("flag Success!");
-                            current.Socket.BeginSend(data, 0, data.Length, SocketFlags.None, SendCallback, current.Socket);
+                            current.Send("flag Success!");
                         }
                     }
                     break;
@@ -632,7 +632,7 @@ namespace NSHG
                                 }
                                 else
                                 {
-                                    id = n.InnerText;
+                                    id = n.InnerText.Trim();
                                 }
                             }
                             else if (n.Name.ToLower() == "mark")

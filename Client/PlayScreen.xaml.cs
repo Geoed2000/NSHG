@@ -102,11 +102,11 @@ namespace Client
                     catch { }
                     break;
                 case "scenario":
-                    message = data.Remove(0, commands[0].Length);
+                    message = data.Remove(0, commands[0].Length + 1);
                     Dispatcher.Invoke(new Action(delegate ()
                     {
                         ScenarioLog.Add(message);
-                        ScenarioLogBox.Text += ("\n" + message);
+                        ScenarioLogBox.Text += ("\n" + message + "\n");
                     }));
                     break;
                 case "system":

@@ -84,50 +84,60 @@ namespace NSHG
                 OnCorruptPacket.BeginInvoke(datagram, a, null, null);
                 return;
             }
-            
-            if(Data.DestinationAddress == a.LocalIP || (Data.DestinationAddress  & ~a.SubnetMask) == (IP.Broadcast & ~a.SubnetMask))
-            {
-                switch (Data.Protocol)
-                {
-                    case IPv4Header.ProtocolType.ICMP:
-                        handleICMPPacket(Data, a);
-                        break;
-                    case IPv4Header.ProtocolType.TCP:
-                        TCPHeader TCP;
-                        try
-                        {
-                            TCP = new TCPHeader(Data.Datagram);
-                        }
-                        catch(Exception e)
-                        {
-                            OnCorruptPacket?.Invoke(datagram, a);
-                            break;
-                        }
 
-                        OnTCPPacket?.Invoke(Data, TCP, TCP.DestinationPort, a);
-                        break;
-                    case IPv4Header.ProtocolType.UDP:
-                        UDPHeader UDP;
-                        try
-                        {
-                            UDP = new UDPHeader(Data.Datagram);
-                        }
-                        catch(Exception e)
-                        {
-                            OnCorruptPacket?.Invoke(datagram, a);
-                            break;
-                        }
-                        OnUDPPacket?.Invoke(Data, UDP, UDP.DestinationPort, a);
-                        break;
-                    default:
-                        break;
+            if (a.LocalIP != null)
+            {
+                if (Data.DestinationAddress != a.LocalIP)
+                {
+                    OnNotForMe?.Invoke(Data, a);
+                    return;
+                }
+                else if(a.SubnetMask != null)
+                {
+                    if((Data.DestinationAddress & ~a.SubnetMask) == (a.LocalIP & ~a.SubnetMask))
+                    {
+                        OnNotForMe?.Invoke(Data, a);
+                        return;
+                    }
                 }
             }
-            else
+
+            switch (Data.Protocol)
             {
-                LocalLog("Packet not for " + ID + " Addressed to: " + Data.DestinationAddress + " Recieved at:  " + a.LocalIP);
-                OnNotForMe?.Invoke(Data, a);
+                case IPv4Header.ProtocolType.ICMP:
+                    handleICMPPacket(Data, a);
+                    break;
+                case IPv4Header.ProtocolType.TCP:
+                    TCPHeader TCP;
+                    try
+                    {
+                        TCP = new TCPHeader(Data.Datagram);
+                    }
+                    catch (Exception e)
+                    {
+                        OnCorruptPacket?.Invoke(datagram, a);
+                        break;
+                    }
+
+                    OnTCPPacket?.Invoke(Data, TCP, TCP.DestinationPort, a);
+                    break;
+                case IPv4Header.ProtocolType.UDP:
+                    UDPHeader UDP;
+                    try
+                    {
+                        UDP = new UDPHeader(Data.Datagram);
+                    }
+                    catch (Exception e)
+                    {
+                        OnCorruptPacket?.Invoke(datagram, a);
+                        break;
+                    }
+                    OnUDPPacket?.Invoke(Data, UDP, UDP.DestinationPort, a);
+                    break;
+                default:
+                    break;
             }
+
         }
         protected virtual void handleICMPPacket(IPv4Header datagram, NetworkInterface a)
         {
@@ -550,6 +560,7 @@ namespace NSHG
             RoutingTable = new SystemRoutingTable(this);
             AddApp(RoutingTable);
         }
+
 
         public new XmlNode ToXML(XmlDocument doc)
         {
