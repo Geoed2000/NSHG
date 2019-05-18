@@ -10,14 +10,13 @@ namespace NSHG.Applications
 {
     public class PacketSniffer : Application
     {
-        bool on = false;
-        bool ip = true;
-        bool udp = true;
-        bool dhcp = true;
+        private bool on = true;
+        private bool ip = true;
+        private bool udp = true;
+        private bool dhcp = true;
 
         public PacketSniffer(Action<string> Log = null):base(Log)
         {
-
         }
 
         public void onPacket(byte[] datagram)

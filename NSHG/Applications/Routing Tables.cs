@@ -201,15 +201,13 @@ namespace NSHG.Applications
             if (tick >= nextUpdateTick)
             {
                 GenerateTable();
-                nextUpdateTick += (uint)rand.Next(50, 200);
+                nextUpdateTick += (uint)rand.Next(10, 25);
             }
         }
 
         public override void Command(string CommandString)
         {
-
-
-            base.Command(CommandString);
+              base.Command(CommandString);
         }
     }
 }

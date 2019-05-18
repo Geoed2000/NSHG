@@ -27,18 +27,16 @@ namespace Server
     public partial class MainWindow : Window
     {
         private Timer TickTimer = new Timer(200);
+        public List<string> SystemLog = new List<string>();
         public List<string> CommandLog = new List<string>();
         int upto = 0;
         bool TickInProgress = false;
         private object TIPLock = new object();
-        public List<string> SystemLog = new List<string>();
         private object LogLock;
         string filepath = "";
         Network network;
         bool networkloaded = false;
         uint tick = 0;
-
-        Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
 
         public MainWindow()
@@ -198,7 +196,7 @@ namespace Server
                     {
                         List<string> NetworkCommandList = new List<string>(commandlist);   
                         NetworkCommandList.RemoveAt(0);
-                        network.asSystem(NetworkCommandList.ToArray(), Log);
+                        network.asSystem(NetworkCommandList.ToArray());
                     }
                     break;
                 case "tick":

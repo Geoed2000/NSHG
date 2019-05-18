@@ -452,7 +452,7 @@ namespace NSHG.NetworkInterfaces
         public override bool isConnectedTo(uint id)
         {
             return OtherEndIDs.Contains(id);
-        }
+        }   
 
         public override XmlNode ToXML(XmlDocument doc)
         {

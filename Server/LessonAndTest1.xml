@@ -1,0 +1,227 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Root>
+  <Router>
+    <ID>1</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <GroupAdapter>
+      <name>Adapter 1</name>
+      <sysid>1</sysid>
+      <mac>6D:4D:F2:4C:A3:16</mac>
+      <localip>192.168.1.1</localip>
+      <subnetmask>255.255.255.0</subnetmask>
+      <defaultgateway>192.168.1.1</defaultgateway>
+      <connectedsystems>
+        <ID>2</ID>
+        <ID>3</ID>
+        <ID>4</ID>
+        <ID>5</ID>
+        <ID>6</ID>
+        <ID>7</ID>
+        <ID>8</ID>
+        <ID>9</ID>
+      </connectedsystems>
+      <connected>True</connected>
+    </GroupAdapter>
+   </Router>
+  
+  <Player>
+    <ID>2</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>2</sysid>
+      <mac>6D:4D:F2:48:69:B4</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>3</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>3</sysid>
+      <mac>6D:4D:F2:FA:C2:27</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>4</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>4</sysid>
+      <mac>6D:4D:F2:99:AC:38</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>5</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>5</sysid>
+      <mac>6D:4D:F2:79:55:68</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>6</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>6</sysid>
+      <mac>6D:4D:F2:94:83:CA</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>7</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>7</sysid>
+      <mac>6D:4D:F2:2B:0F:06</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>8</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>8</sysid>
+      <mac>6D:4D:F2:69:53:7F</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>9</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>9</sysid>
+      <mac>6D:4D:F2:DD:46:89</mac>
+      <connectedsystem>1</connectedsystem>
+      <connected>True</connected>
+    </Adapter>
+   </Player>
+
+  
+  <Connection>
+    <ID>1</ID>
+    <ID>2</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>3</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>4</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>5</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>6</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>7</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>8</ID>
+  </Connection>
+  <Connection>
+    <ID>1</ID>
+    <ID>9</ID>
+  </Connection>
+
+  
+  <Flag>
+    <id>Header</id>
+    <mark>The Main Components of a packet 1</mark>
+  </Flag>
+  <Flag>
+    <id>Datagram</id>
+    <mark>The Main Components of a packet 2</mark>
+  </Flag>
+  <Flag>
+    <id>Network</id>
+    <mark>Knowladge of the TCP/IP Stack</mark>
+  </Flag>
+  <Flag>
+    <id>FF:FF:FF:FF:FF:FF</id>
+    <mark>be familiar with the role of MAC addresses</mark>
+  </Flag>
+  <Flag>
+    <id>67</id>
+    <mark>familiar with common ports 1</mark>
+  </Flag>
+  <Flag>
+    <id>68</id>
+    <mark>familiar with common ports 2</mark>
+  </Flag>
+  <Flag>
+    <id>192.168.1.0</id>
+    <mark>Split an ip address into a host and a network</mark>
+  </Flag>
+  
+  
+  <Scenario>
+    <message Tick="1"   Text="Lesson one, By this point you should have already ran the tutorial"/>
+    <message Tick="20"  Text="First we will discuss what a packet is"/>
+    <message Tick="40"  Text="A packet has a few main component; a Header and a Datagram"/>
+    <message Tick="60"  Text="Your first two flags are these two main components"/>
+
+    <message Tick="99" Text=""/>
+    <message Tick="100" Text="Now where abouts does a packet reside? The TCP/IP Stack"/>
+    <message Tick="120" Text="This stack has 4 layers. application, transport, network and link"/>
+    <message Tick="150" Text="Application Layer"/>
+    <message Tick="160" Text="The Application layer is the highest layer and is where high level protocols such as SSH and FTP reside"/>
+    <message Tick="200" Text="Transport Layer"/>
+    <message Tick="210" Text="The Transport layer is responcible for communication between systems, this is where TCP and UDP reside"/>
+    <message Tick="260" Text="Network layer"/>
+    <message Tick="270" Text="The Network layer is hop to hop, this is where IP is located"/>
+    <message Tick="320" Text="Link Layer"/>
+    <message Tick="330" Text="The Link layer is responcible for the transfer of data from one system to another and the integrity of that data, this is where the Ethernet protocols reside"/>
+    <message Tick="400" Text="Your next flag is the layer that ip resides in fill in the underscores _____ Layer"/>
+    
+    <message Tick="449" Text=""/>
+    <message Tick="450" Text="On the Link layer a MAC address is used as a unique identifier for each network interface"/>
+    <message Tick="480" Text="A mac address is formatted as 6 bytes written in hexadecimal seperated by -'s or :'s"/>
+    <message Tick="490" Text="For example: 4A:F8:99:23:E4:0A"/>
+    <message Tick="500" Text="The next flag is the MAC Address of All 1's as formatted above"/>
+    
+    <message Tick="549" Text=""/>
+    <message Tick="550" Text="When a packet is sent across a network using UDP or TCP they use Ports to communicate"/>
+    <message Tick="600" Text="A port is much like a port in real life, data is directed there so it is forwarded to the correct destination"/>
+    <message Tick="650" Text="The port 80 is a commonly used port for HTTP and 8080 for HTTPS"/>
+    <message Tick="700" Text="Use the Packet sniffer to find out what two ports DHCP uses, submit them as two differen flags"/>
+
+    <message Tick="750" Text="For this lesson the last thing you need to know is How an IPAddress is partitioned"/>
+    <message Tick="790" Text="An IP is made up of a host address and a network address these can be found using the subnet mask"/>
+    <message Tick="830" Text="for example with an ipaddress of 2.2.1.1 and a subnet mask of 2.2.0.0 the network address would be 192.168.0.0 and the host address would be 0.0.1.1"/>#
+    <message Tick="880" Text="you may notice that this is done using a bitwise and between the IPaddress and the subnet mask"/>
+    <message Tick="930" Text="the last flag is the network address of your current system"/>
+    
+    <message Tick="1000" Text="fin"/>
+  </Scenario>
+</Root>

@@ -101,6 +101,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="LessonAndTest1.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="sys1.xml">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

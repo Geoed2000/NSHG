@@ -364,7 +364,7 @@ namespace NSHG.Applications
             }
         }
 
-        SortedList<uint,session> sessions = new SortedList<uint,session>();
+        public SortedList<uint,session> sessions = new SortedList<uint,session>();
 
 
         public DHCPClient(System s, List<NetworkInterface> adapters, Action<string> Log = null) : base(Log)
@@ -561,7 +561,7 @@ namespace NSHG.Applications
                                                     Reserved.Remove(Request);
                                                 if (Leases.ContainsKey(Request))
                                                     Leases.Remove(Request);
-                                                Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(1200, 1800));
+                                                Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(40, 60));
                                                 Leases.Add(l.ciaddr, l);
                                                 ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
                                                 Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");

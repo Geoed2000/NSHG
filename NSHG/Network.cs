@@ -13,6 +13,10 @@ namespace NSHG
 {
     public class Network
     {
+        public const int buffersize = 2048;
+        public const int port = 25565;
+
+
         public Dictionary<uint, System> Systems;
         public List<Tuple<uint, uint>> Connections;
         public List<Tuple<string, string>> Flags;
@@ -21,13 +25,12 @@ namespace NSHG
         public List<MAC> TakenMacAddresses;
 
         public Socket ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        public const int buffersize = 2048;
-        public const int port = 25565;
         private static readonly byte[] buffer = new byte[buffersize];
         public List<User> users;
         public SortedList<uint, string> Scenario;
 
         public Action<string> Log;
+        
 
         public class User
         {
@@ -60,7 +63,7 @@ namespace NSHG
             }
 
 
-            public void PlayerConnectedRecieveCallback(IAsyncResult asyncResult)
+            public void PlayerRecieveCallback(IAsyncResult asyncResult)
             {
                 int recieved;
 
@@ -86,7 +89,7 @@ namespace NSHG
 
                 packetProtocol.DataReceived(recieveBuffer);
                 
-                Socket.BeginReceive(Recievebuffer, 0, buffersize, SocketFlags.None, PlayerConnectedRecieveCallback, null);
+                Socket.BeginReceive(Recievebuffer, 0, buffersize, SocketFlags.None, PlayerRecieveCallback, null);
             }
             private void SendCallback(IAsyncResult asyncResult)
             {
@@ -228,7 +231,7 @@ namespace NSHG
                         Data = Encoding.ASCII.GetBytes("success username: " + username + ",password: " + password);
                         current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
 
-                        current.BeginReceive(user.Recievebuffer, 0, buffersize, SocketFlags.None, user.PlayerConnectedRecieveCallback, user);
+                        current.BeginReceive(user.Recievebuffer, 0, buffersize, SocketFlags.None, user.PlayerRecieveCallback, user);
                         break;
                     }
                     else
@@ -261,7 +264,7 @@ namespace NSHG
                                 Data = Encoding.ASCII.GetBytes("success");
                                 Systems[u.SysID].LocalLog += s => { u.Send("system " + s); };
                                 current.BeginSend(Data, 0, Data.Length, SocketFlags.None, SendCallback, current);
-                                current.BeginReceive(u.Recievebuffer, 0, buffersize, SocketFlags.None, u.PlayerConnectedRecieveCallback, u);
+                                current.BeginReceive(u.Recievebuffer, 0, buffersize, SocketFlags.None, u.PlayerRecieveCallback, u);
                                 break;
 
                             }
@@ -296,7 +299,7 @@ namespace NSHG
                     List<string> NetworkCommandList = new List<string>(split);
                     NetworkCommandList.RemoveAt(0);
                     NetworkCommandList.Insert(0, current.SysID.ToString());
-                    asSystem(NetworkCommandList.ToArray(), Log);
+                    asSystem(NetworkCommandList.ToArray());
                     break;
 
                 case "flag":
@@ -345,7 +348,7 @@ namespace NSHG
             }
         }
 
-        public void asSystem(string[] commandlist, Action<string> Log)
+        public void asSystem(string[] commandlist)
         {
             if (commandlist.Length > 1)
             {
@@ -420,6 +423,7 @@ namespace NSHG
                     file.Close();
                 }
                 return true;
+                
             }
             catch
             {
