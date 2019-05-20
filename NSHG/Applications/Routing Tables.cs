@@ -74,14 +74,14 @@ namespace NSHG.Applications
                 switch (Commands[0])
                 {
                     case "add":
-                        if (Commands.Length == 6)
+                        if (Commands.Length >= 6)
                         {
                             Entry e = new Entry();
                             try
                             {
                                 e.Destination = IP.Parse(Commands[1]);
                                 e.Netmask = IP.Parse(Commands[2]);
-                                if(Commands[2].ToLower() != "null")
+                                if(Commands[3].ToLower() != "null")
                                 {
                                     e.Gateway = IP.Parse(Commands[3]);
                                 }
@@ -89,11 +89,12 @@ namespace NSHG.Applications
                                 e.Metric = uint.Parse(Commands[5]);
                                 NewStaticEntry(e);
                             }
-                            catch
+                            catch(Exception ex)
                             {
                                 Log("Unable to Parse Parameters");
+                                Log(ex.ToString());
                             }
-                        }
+                        }else
                         if ((Commands?[1] ?? "") == "help")
                         {
                             Log("add [Destination IP] [Subnetmask] [Gateway] [Interface] [Metric]");
@@ -112,14 +113,14 @@ namespace NSHG.Applications
                         Log("Destination    Netmask       Gateway    interface       metric"); 
                         foreach(Entry e in Entries.Values)
                         {
-                            Log(e.Destination + "   " + e.Netmask + "   " + e.Gateway ?? "null" + "   " + e.Interface + "   " + e.Metric);
+                            Log(e.Destination + "   " + e.Netmask + "   " + (e.Gateway?.ToString() ?? "null") + "   " + e.Interface + "   " + e.Metric);
                         }
 
                         Log(" ");
                         Log("Static Entries");
                         foreach(Entry e in StaticEntries.Values)
                         {
-                            Log(e.Destination + "   " + e.Netmask + "   " + e.Gateway + "   " + e.Interface + "   " + e.Metric);
+                            Log(e.Destination + "   " + e.Netmask + "   " + (e.Gateway?.ToString() ?? "null") + "   " + e.Interface + "   " + e.Metric);
                         }
                         break;
                     case "help":
@@ -128,6 +129,10 @@ namespace NSHG.Applications
                         break;
                     
                 }
+            }
+            else
+            {
+                Log("Error, use help for more info");
             }
         }
     }

@@ -24,7 +24,7 @@ namespace Client
     {
         public static char[] nums = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         public MainWindow Parent;
-        private readonly Socket ClientSocket = new Socket(AddressFamily.InterNetwork ,SocketType.Stream ,ProtocolType.Tcp);
+        private Socket ClientSocket;
         int attempts;
         string ip;
         bool attempting = false;
@@ -69,6 +69,7 @@ namespace Client
                 ip = Byte1.Text + "." + Byte2.Text + "." + Byte3.Text + "." + Byte4.Text;
                 attempts = 0;
                 attempting = true;
+                ClientSocket = new Socket(AddressFamily.InterNetwork ,SocketType.Stream ,ProtocolType.Tcp);
                 ClientSocket.BeginConnect(ip, Network.port, connectRecieveCallback, ClientSocket);
             }
         }
@@ -80,7 +81,7 @@ namespace Client
                 ClientSocket.EndConnect(asyncResult);
             }catch (SocketException)
             {
-
+                
             }
             if (ClientSocket.Connected)
             {
@@ -93,7 +94,7 @@ namespace Client
             else
             {
                 attempts++;
-                if (attempts >= 10)
+                if (attempts >= 5)
                 {
                     log("Could not connect to server");
                     attempting = false;

@@ -73,7 +73,14 @@ namespace NSHG
         }
         public void Packet(byte[] datagram, NetworkInterface a)
         {
-            OnRecievedPacket?.Invoke(datagram, a);
+            try
+            {
+                OnRecievedPacket.Invoke(datagram, a);
+            }
+            catch
+            {
+
+            }
             IPv4Header Data;
             try
             {
@@ -87,10 +94,9 @@ namespace NSHG
 
             if (a.LocalIP != null)
             {
-                if (Data.DestinationAddress != a.LocalIP)
+                if (Data.DestinationAddress == a.LocalIP)
                 {
-                    OnNotForMe?.Invoke(Data, a);
-                    return;
+
                 }
                 else if(a.SubnetMask != null)
                 {
@@ -321,10 +327,21 @@ namespace NSHG
                                     LocalLog("Must specify a app to act as");
                                 }
                                 break;
+                            case "help":
+                                LocalLog("as item identifier      -runs a command as the selected item");
+                                LocalLog("    items");
+                                LocalLog("      app");
+                                break;
                             default:
                                 LocalLog("Must specify a type to act as");
+                                LocalLog("use as help for more info");
                                 break;
                         }
+                    }
+                    else
+                    {
+                        LocalLog("Must specify a type to act as");
+                        LocalLog("use as help for more info");
                     }
                     break;
 
@@ -333,6 +350,11 @@ namespace NSHG
                     {
                         if (int.TryParse(Command[1],out int app))
                         {
+                            if (app >= Apps.Length || app < 0)
+                            {
+                                LocalLog("Failed to add app, slot out of bounds");
+                                return;
+                            }
                             bool isNull = Apps[app] == null;
                             bool isClosed = true;
                             if (!isNull) isClosed = Apps[app].closed;

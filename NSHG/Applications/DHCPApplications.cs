@@ -186,7 +186,7 @@ namespace NSHG.Applications
                                             {
                                                 case Tag.addressTime:
                                                     T1 = BitConverter.ToUInt32(op.data, 0);
-                                                    T2 = T1 - 500;
+                                                    T2 = T1 - 10;
                                                     break;
                                                 case Tag.subnetmask:
                                                     a.SubnetMask = new IP(op.data,0);
@@ -413,8 +413,8 @@ namespace NSHG.Applications
             foreach (session s in sessions.Values) s.OnTick(tick);
         }
         public override void Command(string commandstring)
-        { 
-
+        {
+            Log("No commands for DHCPClient");
         }
     }
 
@@ -564,6 +564,7 @@ namespace NSHG.Applications
                                                 Lease l = new Lease(Request, dHCP.chaddr, currentTick, (uint)r.Next(40, 60));
                                                 Leases.Add(l.ciaddr, l);
                                                 ol.Add(new DHCPOption(Tag.dhcpMsgType, new byte[] { (byte)DHCPOption.MsgType.DHCPACK }));
+                                                newdHCP.yiaddr = Request;
                                                 Log("Leased IP " + l.ciaddr + " to " + l.chaddr + " for " + l.LeaseLength + " ticks");
                                             }
                                             
@@ -598,9 +599,14 @@ namespace NSHG.Applications
             {
                 lock (Leaseslock)
                 {
+                    List<IP> toremove = new List<IP>();
                     foreach (Lease l in Leases.Values)
                     {
-                        if (l.LeaseStartTick + l.LeaseLength < tick && l.LeaseLength != 0) Leases.Remove(l.ciaddr);
+                        if (l.LeaseStartTick + l.LeaseLength < tick && l.LeaseLength != 0) toremove.Add(l.ciaddr);
+                    }
+                    foreach (IP ip in toremove)
+                    {
+                        Leases.Remove(ip);
                     }
                 }
             }

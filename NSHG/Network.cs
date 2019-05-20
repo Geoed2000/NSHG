@@ -412,9 +412,9 @@ namespace NSHG
             {
                 using (StreamWriter file = new StreamWriter(filepath))
                 {
-                    for (int i = 0; i < users.Count + 1; i++)
+                    for (int i = 0; i < Flags.Count + 1; i++)
                     {
-                        for (int j = 0; j < Flags.Count + 1; j++)
+                        for (int j = 0; j < users.Count + 1; j++)
                         {
                             file.Write(report[i, j] + ",");
                         }

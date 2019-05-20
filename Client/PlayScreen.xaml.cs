@@ -57,7 +57,10 @@ namespace Client
             {
                 SystemLog.Add ("Client Forcefully Disconected " + e.Message);
                 ClientSocket.Close();
-                Parent.MainFrame.Content = new ConnectScreen(Parent);
+                Dispatcher.Invoke(new Action(delegate ()
+                {
+                    Parent.MainFrame.Content = new ConnectScreen(Parent);
+                }));
                 return;
             }
             if(recieved == 0)

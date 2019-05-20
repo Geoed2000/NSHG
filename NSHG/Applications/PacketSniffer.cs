@@ -156,6 +156,10 @@ namespace NSHG.Applications
 
                 }
             }
+            else
+            {
+                Log("Error, use help for more info");
+            }
         }
 
         public override void OnTick(uint tick)

@@ -125,18 +125,47 @@ namespace Server
 
             switch (commandlist[0])
             {
-                case "load":
-                    try
+                case "view":
+                    if (!networkloaded)
                     {
-                        tmpfilepath = commandlist[1];
-                        network = Network.LoadNetwork(tmpfilepath,Log);
-                        networkloaded = true;
-                        filepath = tmpfilepath;
+                        Log("No network loded");
                     }
-                    catch (Exception e)
+                    else
                     {
-                        Log(e.ToString());
-                        break;
+                        if(commandlist.Length>1)
+                        try
+                        {
+                            foreach (string s in network.Systems[uint.Parse(commandlist[1])].Locallog) Log(s);
+                        }catch(FormatException e)
+                        {
+                            Log("Error invalid ID");
+                        }
+                        catch (Exception)
+                        {
+                            Log("Error that system doesn't exist");
+                        }
+                        else Log("Error plese supply a system to view, use help for more info");
+                    }
+                    break;
+                case "load":
+                    if (!networkloaded)
+                    {
+                        try
+                        {
+                            tmpfilepath = commandlist[1];
+                            network = Network.LoadNetwork(tmpfilepath, Log);
+                            networkloaded = true;
+                            filepath = tmpfilepath;
+                        }
+                        catch (Exception e)
+                        {
+                            Log(e.ToString());
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        Log("Error Network already loaded");
                     }
                     break;
                 case "save":
@@ -205,12 +234,27 @@ namespace Server
                 case "tickrate":
                     try
                     {
-                        TickTimer.Interval = double.Parse(commandlist[1]);
+                        if (commandlist.Length < 2)
+                        {
+                            Log("invalid ticrate supplied as there is no tick rate. use the help command for more infomation");
+                        }
+                        else
+                        {
+                            TickTimer.Interval = double.Parse(commandlist[1]);
+                        }
+                    }
+                    catch (FormatException e)
+                    {
+                        Log("error, invalid tickrate format");
+                        
+                    }
+                    catch (OverflowException e)
+                    {
+                        Log("Error tickrate cause overflow");
                     }
                     catch (Exception e)
                     {
                         Log(e.ToString());
-                        
                     }
                     break;
                 case "report":
