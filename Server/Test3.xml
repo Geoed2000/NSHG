@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Root>
+
+  <Player>
+    <ID>1</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>1</sysid>
+      <connected>False</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>2</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>2</sysid>
+      <connected>False</connected>
+    </Adapter>
+   </Player>
+  
+  <Player>
+    <ID>3</ID>
+    <RespondToEcho>True</RespondToEcho>
+    <Adapter>
+      <name>Adapter 1</name>
+      <sysid>3</sysid>
+      <connected>False</connected>
+    </Adapter>
+   </Player>
+  
+  
+  <Flag>
+    <id>flag1</id>
+    <mark>flag1</mark>
+  </Flag>
+  
+  <Flag>
+    <id>flag2</id>
+    <mark>flag2</mark>
+  </Flag>
+  
+  <Flag>
+    <id>flag3</id>
+    <mark>flag3</mark>
+  </Flag>
+  
+  <Flag>
+    <id>flag4</id>
+    <mark>flag4</mark>
+  </Flag>
+  
+  <Flag>
+    <id>flag5</id>
+    <mark>flag5</mark>
+  </Flag>
+  
+  <Flag>
+    <id>flag6</id>
+    <mark>flag6</mark>
+  </Flag>
+</Root>
